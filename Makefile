@@ -13,6 +13,19 @@ default: build
 build:
 	CGO_ENABLED=0 go build -mod=vendor -o $(OUT) $(MAIN_PKG)
 
+.PHONY: linux
+linux: export GOOS := linux
+linux: export GOARCH := amd64
+linux: LINUX_OUT := $(OUT)-$(GOOS)-$(GOARCH)
+linux:
+	@echo BUILDING $(LINUX_OUT)
+	CGO_ENABLED=0 go build -mod=vendor -o $(LINUX_OUT) $(MAIN_PKG)
+	@echo DONE
+
+.PHONY: image
+image:
+	docker build -t gstore-local -f scripts/Dockerfile .
+
 .PHONY: clean
 clean:
 	rm -rf $(OUT_DIR)
