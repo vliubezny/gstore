@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetCategories(t *testing.T) {
+func TestStorage_GetCategories(t *testing.T) {
 	s := New()
 
 	categories, err := s.GetCategories(context.Background())
