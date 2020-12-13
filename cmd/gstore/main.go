@@ -1,14 +1,21 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/go-chi/chi"
 	"github.com/jessevdk/go-flags"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/sync/errgroup"
 )
+
+var errTerminated = errors.New("terminated")
 
 var opts = struct {
 	Host string `long:"http.host" env:"HTTP_HOST" default:"0.0.0.0" description:"IP address to listen"`
@@ -30,13 +37,13 @@ func main() {
 		if flagsErr, ok := err.(*flags.Error); ok && flagsErr.Type == flags.ErrHelp {
 			os.Exit(0)
 		}
-		logrus.WithError(err).Fatal("fail to parse flags")
+		logrus.WithError(err).Fatal("failed to parse flags")
 	}
 
 	lvl, _ := logrus.ParseLevel(opts.LogLevel)
 	logrus.SetLevel(lvl)
 
-	logrus.Info("Starting server")
+	logrus.Info("starting service")
 	logrus.Infof("%+v", opts) // can print secrets!
 
 	r := chi.NewMux()
@@ -46,5 +53,26 @@ func main() {
 		Handler: r,
 	}
 
-	srv.ListenAndServe()
+	gr, _ := errgroup.WithContext(context.Background())
+	gr.Go(srv.ListenAndServe)
+
+	gr.Go(func() error {
+		sigs := make(chan os.Signal, 1)
+		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+
+		s := <-sigs
+		logrus.Infof("terminating by %s signal", s)
+
+		if err := srv.Shutdown(context.Background()); err != nil {
+			logrus.WithError(err).Error("failed to gracefully shutdown server")
+		}
+
+		return errTerminated
+	})
+
+	logrus.Info("service started")
+
+	if err := gr.Wait(); err != nil && !errors.Is(err, errTerminated) && !errors.Is(err, http.ErrServerClosed) {
+		logrus.WithError(err).Fatal("service unexpectedly stopped")
+	}
 }
