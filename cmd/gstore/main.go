@@ -12,6 +12,9 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/jessevdk/go-flags"
 	"github.com/sirupsen/logrus"
+	"github.com/vliubezny/gstore/internal/server"
+	"github.com/vliubezny/gstore/internal/service"
+	"github.com/vliubezny/gstore/internal/storage/mem"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -47,6 +50,8 @@ func main() {
 	logrus.Infof("%+v", opts) // can print secrets!
 
 	r := chi.NewMux()
+
+	server.SetupRouter(service.New(mem.New()), r)
 
 	srv := http.Server{
 		Addr:    fmt.Sprintf("%s:%d", opts.Host, opts.Port),

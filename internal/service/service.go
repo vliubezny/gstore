@@ -6,6 +6,8 @@ import (
 	"github.com/vliubezny/gstore/internal/storage"
 )
 
+//go:generate mockgen -destination=./service_mock.go -package=service -source=service.go
+
 // Service provides business logic methods.
 type Service interface {
 	// GetCategories returns slice of product categories.
