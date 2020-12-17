@@ -7,6 +7,7 @@ package storage
 import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
+	model "github.com/vliubezny/gstore/internal/model"
 	reflect "reflect"
 )
 
@@ -34,10 +35,10 @@ func (m *MockStorage) EXPECT() *MockStorageMockRecorder {
 }
 
 // GetCategories mocks base method
-func (m *MockStorage) GetCategories(ctx context.Context) ([]*Category, error) {
+func (m *MockStorage) GetCategories(ctx context.Context) ([]*model.Category, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCategories", ctx)
-	ret0, _ := ret[0].([]*Category)
+	ret0, _ := ret[0].([]*model.Category)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

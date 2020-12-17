@@ -7,6 +7,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/vliubezny/gstore/internal/model"
 	"github.com/vliubezny/gstore/internal/storage"
 )
 
@@ -15,7 +16,7 @@ func TestService_GetCategories(t *testing.T) {
 	defer ctrl.Finish()
 
 	ctx := context.Background()
-	categories := []*storage.Category{
+	categories := []*model.Category{
 		{ID: 1, Name: "Test1"},
 		{ID: 2, Name: "Test2"},
 	}

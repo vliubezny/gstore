@@ -3,17 +3,18 @@ package mem
 import (
 	"context"
 
+	"github.com/vliubezny/gstore/internal/model"
 	"github.com/vliubezny/gstore/internal/storage"
 )
 
 type memStorage struct {
-	s []*storage.Category
+	s []*model.Category
 }
 
 // New creates prepopulated in-memory storage.
 func New() storage.Storage {
 	s := &memStorage{}
-	s.s = []*storage.Category{
+	s.s = []*model.Category{
 		{ID: 1, Name: "Electronics"},
 		{ID: 2, Name: "Computers"},
 		{ID: 3, Name: "Smart Home"},
@@ -28,6 +29,6 @@ func New() storage.Storage {
 	return s
 }
 
-func (s *memStorage) GetCategories(ctx context.Context) ([]*storage.Category, error) {
+func (s *memStorage) GetCategories(ctx context.Context) ([]*model.Category, error) {
 	return s.s, nil
 }

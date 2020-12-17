@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	"github.com/vliubezny/gstore/internal/model"
 	"github.com/vliubezny/gstore/internal/storage"
 )
 
@@ -11,7 +12,7 @@ import (
 // Service provides business logic methods.
 type Service interface {
 	// GetCategories returns slice of product categories.
-	GetCategories(ctx context.Context) ([]*storage.Category, error)
+	GetCategories(ctx context.Context) ([]*model.Category, error)
 }
 
 type service struct {
@@ -25,6 +26,6 @@ func New(s storage.Storage) Service {
 	}
 }
 
-func (s *service) GetCategories(ctx context.Context) ([]*storage.Category, error) {
+func (s *service) GetCategories(ctx context.Context) ([]*model.Category, error) {
 	return s.s.GetCategories(ctx)
 }
