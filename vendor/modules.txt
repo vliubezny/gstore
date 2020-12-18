@@ -18,6 +18,9 @@ github.com/sirupsen/logrus
 ## explicit
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/require
+# github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce
+## explicit
+github.com/tomasen/realip
 # golang.org/x/sync v0.0.0-20201207232520-09787c993a3a
 ## explicit
 golang.org/x/sync/errgroup

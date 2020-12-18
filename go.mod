@@ -8,5 +8,6 @@ require (
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/sirupsen/logrus v1.7.0
 	github.com/stretchr/testify v1.6.1
+	github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce
 	golang.org/x/sync v0.0.0-20201207232520-09787c993a3a
 )
