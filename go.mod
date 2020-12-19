@@ -3,6 +3,7 @@ module github.com/vliubezny/gstore
 go 1.15
 
 require (
+	github.com/davecgh/go-spew v1.1.1
 	github.com/go-chi/chi v1.5.1
 	github.com/golang/mock v1.4.4
 	github.com/jessevdk/go-flags v1.4.0
