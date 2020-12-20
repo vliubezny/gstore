@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
@@ -14,8 +15,10 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/vliubezny/gstore/internal/server"
 	"github.com/vliubezny/gstore/internal/service"
-	"github.com/vliubezny/gstore/internal/storage/mem"
+	"github.com/vliubezny/gstore/internal/storage/postgres"
 	"golang.org/x/sync/errgroup"
+
+	_ "github.com/lib/pq"
 )
 
 var errTerminated = errors.New("terminated")
@@ -25,6 +28,8 @@ var opts = struct {
 	Port int    `long:"http.port" env:"HTTP_PORT" default:"8080" description:"port to listen"`
 
 	LogLevel string `long:"log.level" env:"LOG_LEVEL" default:"debug" description:"Log level" choice:"debug" choice:"info" choice:"warning" choice:"error"`
+
+	Postgres string `long:"postgres" env:"POSTGRES" default:"host=localhost port=5432 user=postgres password=root sslmode=disable" description:"postgres dsn"`
 }{}
 
 func main() {
@@ -49,9 +54,10 @@ func main() {
 	logrus.Info("starting service")
 	logrus.Infof("%+v", opts) // can print secrets!
 
+	db := mustGetDB()
 	r := chi.NewMux()
 
-	server.SetupRouter(service.New(mem.New()), r)
+	server.SetupRouter(service.New(postgres.New(db)), r)
 
 	srv := http.Server{
 		Addr:    fmt.Sprintf("%s:%d", opts.Host, opts.Port),
@@ -80,4 +86,17 @@ func main() {
 	if err := gr.Wait(); err != nil && !errors.Is(err, errTerminated) && !errors.Is(err, http.ErrServerClosed) {
 		logrus.WithError(err).Fatal("service unexpectedly stopped")
 	}
+}
+
+func mustGetDB() *sql.DB {
+	db, err := sql.Open("postgres", opts.Postgres)
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to create postgres connection")
+	}
+
+	if err := db.PingContext(context.Background()); err != nil {
+		logrus.WithError(err).Fatal("failed to ping postgres")
+	}
+
+	return db
 }
