@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
@@ -17,8 +16,6 @@ import (
 	"github.com/vliubezny/gstore/internal/service"
 	"github.com/vliubezny/gstore/internal/storage/postgres"
 	"golang.org/x/sync/errgroup"
-
-	_ "github.com/lib/pq"
 )
 
 var errTerminated = errors.New("terminated")
@@ -29,7 +26,10 @@ var opts = struct {
 
 	LogLevel string `long:"log.level" env:"LOG_LEVEL" default:"debug" description:"Log level" choice:"debug" choice:"info" choice:"warning" choice:"error"`
 
-	Postgres string `long:"postgres" env:"POSTGRES" default:"host=localhost port=5432 user=postgres password=root sslmode=disable" description:"postgres dsn"`
+	PostgresDSN                string `long:"postgres" env:"POSTGRES_DSN" default:"host=localhost port=5432 user=postgres password=root dbname=postgres sslmode=disable" description:"postgres dsn"`
+	PostgresMaxOpenConnections int    `long:"postgres.max_open_connections" env:"POSTGRES_MAX_OPEN_CONNECTIONS" default:"0" description:"postgres maximal open connections count, 0 means unlimited"`
+	PostgresMaxIdleConnections int    `long:"postgres.max_idle_connections" env:"POSTGRES_MAX_IDLE_CONNECTIONS" default:"5" description:"postgres maximal idle connections count"`
+	PostgresMigrations         string `long:"postgres.migrations" env:"POSTGRES_MIGRATIONS" default:"scripts/migrations/postgres" description:"postgres migrations directory"`
 }{}
 
 func main() {
@@ -54,7 +54,8 @@ func main() {
 	logrus.Info("starting service")
 	logrus.Infof("%+v", opts) // can print secrets!
 
-	db := mustGetDB()
+	db := postgres.MustSetupDB(opts.PostgresDSN, opts.PostgresMaxOpenConnections,
+		opts.PostgresMaxIdleConnections, opts.PostgresMigrations)
 	r := chi.NewMux()
 
 	server.SetupRouter(service.New(postgres.New(db)), r)
@@ -86,17 +87,4 @@ func main() {
 	if err := gr.Wait(); err != nil && !errors.Is(err, errTerminated) && !errors.Is(err, http.ErrServerClosed) {
 		logrus.WithError(err).Fatal("service unexpectedly stopped")
 	}
-}
-
-func mustGetDB() *sql.DB {
-	db, err := sql.Open("postgres", opts.Postgres)
-	if err != nil {
-		logrus.WithError(err).Fatal("failed to create postgres connection")
-	}
-
-	if err := db.PingContext(context.Background()); err != nil {
-		logrus.WithError(err).Fatal("failed to ping postgres")
-	}
-
-	return db
 }

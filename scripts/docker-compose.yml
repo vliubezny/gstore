@@ -6,7 +6,7 @@ services:
     container_name: gstore
     restart: always
     environment:
-      - POSTGRES="host=gstore-db port=5432 user=postgres password=root sslmode=disable"
+      - POSTGRES_DSN=host=gstore-db port=5432 user=postgres password=root dbname=postgres sslmode=disable
     ports:
       - "8080:8080"
 

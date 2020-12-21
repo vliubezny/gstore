@@ -8,5 +8,7 @@ RUN make linux
 
 FROM alpine:${ALPINE_VERSION}
 RUN apk update && apk add --no-cache ca-certificates
+ENV POSTGRES_MIGRATIONS="/migrations/postgres"
+COPY scripts/migrations /migrations
 COPY --from=0 /go/src/github.com/vliubezny/gstore/build/gstore-linux-amd64 /gstored
 ENTRYPOINT [ "/gstored" ]
