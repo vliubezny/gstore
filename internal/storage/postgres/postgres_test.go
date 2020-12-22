@@ -7,8 +7,6 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
-	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/sirupsen/logrus"
@@ -66,14 +64,7 @@ func setup() func() {
 	}
 
 	dsn := fmt.Sprintf("host=%s port=%d user=postgres password=root dbname=postgres sslmode=disable", host, port.Int())
-
-	_, currFile, _, ok := runtime.Caller(0)
-	if !ok {
-		logrus.Fatal("failed to get current file location")
-	}
-	migrations := filepath.Join(currFile, "../../../../scripts/migrations/postgres/")
-
-	db = MustSetupDB(dsn, 0, 1, migrations)
+	db = MustSetupDB(dsn, 0, 1, "../../../scripts/migrations/postgres/")
 
 	shutdownFn := func() {
 		if c != nil {
