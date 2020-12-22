@@ -33,7 +33,11 @@ clean:
 .PHONY: test
 test: GO_TEST_FLAGS := -race
 test:
-	go test -mod=vendor -v $(GO_TEST_FLAGS) ./...
+	go test -mod=vendor -v $(GO_TEST_FLAGS) $(GO_TEST_TAGS) ./...
+
+.PHONY: fulltest
+fulltest: GO_TEST_TAGS := --tags=integration
+fulltest: test
 
 .PHONY: vendor
 vendor:
