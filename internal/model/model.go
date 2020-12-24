@@ -14,8 +14,7 @@ type Store struct {
 
 // Item represents product item.
 type Item struct {
-	ID int64
-	// Item is on sale in single store?
+	ID          int64
 	StoreID     int64
 	Name        string
 	Description string

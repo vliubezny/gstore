@@ -34,3 +34,11 @@ func (p pg) GetCategories(ctx context.Context) ([]*model.Category, error) {
 
 	return data, nil
 }
+
+func (p pg) GetStoreItems(ctx context.Context, storeID int64) ([]*model.Item, error) {
+	panic("not implemented")
+}
+
+func (p pg) GetStores(ctx context.Context) ([]*model.Store, error) {
+	panic("not implemented")
+}

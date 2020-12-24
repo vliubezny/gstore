@@ -48,3 +48,33 @@ func (mr *MockStorageMockRecorder) GetCategories(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCategories", reflect.TypeOf((*MockStorage)(nil).GetCategories), ctx)
 }
+
+// GetStoreItems mocks base method
+func (m *MockStorage) GetStoreItems(ctx context.Context, storeID int64) ([]*model.Item, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetStoreItems", ctx, storeID)
+	ret0, _ := ret[0].([]*model.Item)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetStoreItems indicates an expected call of GetStoreItems
+func (mr *MockStorageMockRecorder) GetStoreItems(ctx, storeID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStoreItems", reflect.TypeOf((*MockStorage)(nil).GetStoreItems), ctx, storeID)
+}
+
+// GetStores mocks base method
+func (m *MockStorage) GetStores(ctx context.Context) ([]*model.Store, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetStores", ctx)
+	ret0, _ := ret[0].([]*model.Store)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetStores indicates an expected call of GetStores
+func (mr *MockStorageMockRecorder) GetStores(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStores", reflect.TypeOf((*MockStorage)(nil).GetStores), ctx)
+}
