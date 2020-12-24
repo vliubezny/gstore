@@ -92,3 +92,24 @@ func TestPg_GetCategories(t *testing.T) {
 		{ID: 10, Name: "Toys and Games"},
 	}, categories)
 }
+
+func TestPg_GetStores(t *testing.T) {
+	defer func() {
+		_, err := db.Exec("DELETE FROM store;")
+		require.NoError(t, err)
+	}()
+
+	_, err := db.Exec(`BEGIN;
+	INSERT INTO store (name) VALUES ('iStore');
+	INSERT INTO store (name) VALUES ('Amazon');
+	END;`)
+	require.NoError(t, err)
+
+	stores, err := s.GetStores(ctx)
+	require.NoError(t, err)
+
+	assert.Equal(t, []*model.Store{
+		{ID: 1, Name: "iStore"},
+		{ID: 2, Name: "Amazon"},
+	}, stores)
+}

@@ -75,3 +75,7 @@ check-all: check-mockgen-version
 
 .PHONY: install-all
 install-all: install-mockgen
+
+.PHONY: new-migration
+new-migration:
+	migrate create -ext sql -dir scripts/migrations/postgres -seq $(NAME)

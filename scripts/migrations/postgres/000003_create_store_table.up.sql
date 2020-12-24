@@ -1,0 +1,4 @@
+CREATE TABLE IF NOT EXISTS store (
+    id serial PRIMARY KEY,
+    name VARCHAR(80) NOT NULL
+);
