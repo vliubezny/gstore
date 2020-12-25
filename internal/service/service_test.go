@@ -118,13 +118,6 @@ func TestService_GetStoreItems(t *testing.T) {
 			err:    nil,
 		},
 		{
-			desc:   "ErrNotFound",
-			rItems: nil,
-			rErr:   storage.ErrNotFound,
-			items:  nil,
-			err:    ErrNotFound,
-		},
-		{
 			desc:   "unexpected error",
 			rItems: nil,
 			rErr:   errTest,

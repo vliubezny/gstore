@@ -36,7 +36,18 @@ func (p pg) GetCategories(ctx context.Context) ([]*model.Category, error) {
 }
 
 func (p pg) GetStoreItems(ctx context.Context, storeID int64) ([]*model.Item, error) {
-	panic("not implemented")
+	var items []item
+
+	if err := p.db.SelectContext(ctx, &items, "SELECT * FROM item WHERE store_id=$1", storeID); err != nil {
+		return nil, err
+	}
+
+	data := make([]*model.Item, len(items))
+	for i, d := range items {
+		data[i] = d.toModel()
+	}
+
+	return data, nil
 }
 
 func (p pg) GetStores(ctx context.Context) ([]*model.Store, error) {

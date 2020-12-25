@@ -113,3 +113,27 @@ func TestPg_GetStores(t *testing.T) {
 		{ID: 2, Name: "Amazon"},
 	}, stores)
 }
+
+func TestPg_GetStoreItems(t *testing.T) {
+	defer func() {
+		_, err := db.Exec("DELETE FROM store;")
+		require.NoError(t, err)
+	}()
+
+	var storeID int64
+	err := db.QueryRow(`INSERT INTO store (name) VALUES ('iStore') RETURNING id;`).Scan(&storeID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO item (store_id, name, description, price) VALUES
+	($1, 'iPhone 11', 'Old iphone', 100000),
+	($1, 'iPhone 12', 'New iphone', 200000);`, storeID)
+	require.NoError(t, err)
+
+	items, err := s.GetStoreItems(ctx, storeID)
+	require.NoError(t, err)
+
+	assert.Equal(t, []*model.Item{
+		{ID: 1, StoreID: storeID, Name: "iPhone 11", Description: "Old iphone", Price: 100000},
+		{ID: 2, StoreID: storeID, Name: "iPhone 12", Description: "New iphone", Price: 200000},
+	}, items)
+}

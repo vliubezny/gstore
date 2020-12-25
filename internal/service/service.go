@@ -46,9 +46,6 @@ func (s *service) GetCategories(ctx context.Context) ([]*model.Category, error) 
 func (s *service) GetStoreItems(ctx context.Context, storeID int64) ([]*model.Item, error) {
 	stores, err := s.s.GetStoreItems(ctx, storeID)
 	if err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
-			return nil, ErrNotFound
-		}
 		return nil, fmt.Errorf("failed to get store items: %w", err)
 	}
 	return stores, nil
