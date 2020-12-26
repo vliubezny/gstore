@@ -27,16 +27,29 @@ func SetupRouter(s service.Service, r chi.Router) {
 	)
 
 	r.Get("/v1/categories", srv.getCategoriesHandler)
+	r.Get("/v1/stores", srv.getStoresHandler)
+	r.Get("/v1/items", srv.getStoreItemsHandler)
 }
 
 func getLogger(r *http.Request) logrus.FieldLogger {
 	return r.Context().Value(loggerKey{}).(logrus.FieldLogger)
 }
 
+func writeError(l logrus.FieldLogger, w http.ResponseWriter, code int, message string) {
+	l.Error(message)
+
+	body, _ := json.Marshal(errorResponse{
+		Error: message,
+	})
+
+	w.WriteHeader(code)
+	w.Write(body)
+}
+
 func writeInternalError(l logrus.FieldLogger, w http.ResponseWriter, message string) {
 	l.Errorf("%s\n%s", message, string(debug.Stack()))
 
-	body, _ := json.Marshal(Error{
+	body, _ := json.Marshal(errorResponse{
 		Error: "internal error",
 	})
 

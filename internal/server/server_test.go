@@ -24,6 +24,23 @@ func Test_getLogger(t *testing.T) {
 	assert.Exactly(t, l, logger)
 }
 
+func Test_writeError(t *testing.T) {
+	logger, hook := test.NewNullLogger()
+	rec := httptest.NewRecorder()
+
+	writeError(logger, rec, http.StatusBadRequest, "test error")
+
+	body, _ := ioutil.ReadAll(rec.Result().Body)
+
+	assert.Equal(t, http.StatusBadRequest, rec.Result().StatusCode)
+	assert.Equal(t, `{"error":"test error"}`, string(body))
+
+	log := hook.LastEntry()
+	require.NotNil(t, log)
+	assert.Equal(t, logrus.ErrorLevel, log.Level)
+	assert.Contains(t, log.Message, "test error", "Missing error message")
+}
+
 func Test_writeInternalError(t *testing.T) {
 	logger, hook := test.NewNullLogger()
 	rec := httptest.NewRecorder()
