@@ -28,7 +28,7 @@ func SetupRouter(s service.Service, r chi.Router) {
 
 	r.Get("/v1/categories", srv.getCategoriesHandler)
 	r.Get("/v1/stores", srv.getStoresHandler)
-	r.Get("/v1/items", srv.getStoreItemsHandler)
+	r.Get("/v1/stores/{id}/items", srv.getStoreItemsHandler)
 }
 
 func getLogger(r *http.Request) logrus.FieldLogger {

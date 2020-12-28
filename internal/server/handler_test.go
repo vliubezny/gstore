@@ -184,7 +184,7 @@ func Test_getStoreItemsHandler(t *testing.T) {
 
 			test.NewGlobal()
 			rec := httptest.NewRecorder()
-			r := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/v1/items?storeId=%s", tC.storeID), nil)
+			r := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/v1/stores/%s/items", tC.storeID), nil)
 
 			router.ServeHTTP(rec, r)
 

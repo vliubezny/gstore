@@ -3,6 +3,8 @@ package server
 import (
 	"net/http"
 	"strconv"
+
+	"github.com/go-chi/chi"
 )
 
 func (s *server) getCategoriesHandler(w http.ResponseWriter, r *http.Request) {
@@ -54,7 +56,7 @@ func (s *server) getStoresHandler(w http.ResponseWriter, r *http.Request) {
 func (s *server) getStoreItemsHandler(w http.ResponseWriter, r *http.Request) {
 	l := getLogger(r)
 
-	sid := r.URL.Query().Get("storeId")
+	sid := chi.URLParam(r, "id")
 	storeID, err := strconv.ParseInt(sid, 10, 64)
 	if err != nil {
 		writeError(l.WithError(err), w, http.StatusBadRequest, "invalid storeId")
