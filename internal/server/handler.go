@@ -16,12 +16,10 @@ func (s *server) getCategoriesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := getCategoriesResponse{
-		Categories: make([]*category, len(categories)),
-	}
+	resp := make([]*category, len(categories))
 
 	for i, c := range categories {
-		resp.Categories[i] = &category{
+		resp[i] = &category{
 			ID:   c.ID,
 			Name: c.Name,
 		}
@@ -39,12 +37,10 @@ func (s *server) getStoresHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := getStoresResponse{
-		Stores: make([]*store, len(stores)),
-	}
+	resp := make([]*store, len(stores))
 
 	for i, c := range stores {
-		resp.Stores[i] = &store{
+		resp[i] = &store{
 			ID:   c.ID,
 			Name: c.Name,
 		}
@@ -69,12 +65,10 @@ func (s *server) getStoreItemsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := getStoreItemsResponse{
-		Items: make([]*item, len(items)),
-	}
+	resp := make([]*item, len(items))
 
 	for i, c := range items {
-		resp.Items[i] = &item{
+		resp[i] = &item{
 			ID:          c.ID,
 			StoreID:     c.StoreID,
 			Name:        c.Name,

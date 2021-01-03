@@ -37,7 +37,7 @@ func Test_getCategoriesHandler(t *testing.T) {
 			},
 			err:   nil,
 			rcode: http.StatusOK,
-			rdata: `{"categories":[{"id":1, "name":"Test1"}, {"id":2, "name":"Test2"}]}`,
+			rdata: `[{"id":1, "name":"Test1"}, {"id":2, "name":"Test2"}]`,
 		},
 		{
 			desc:       "internal error",
@@ -88,7 +88,7 @@ func Test_getStoresHandler(t *testing.T) {
 			},
 			err:   nil,
 			rcode: http.StatusOK,
-			rdata: `{"stores":[{"id":1, "name":"Test1"}, {"id":2, "name":"Test2"}]}`,
+			rdata: `[{"id":1, "name":"Test1"}, {"id":2, "name":"Test2"}]`,
 		},
 		{
 			desc:   "internal error",
@@ -141,8 +141,8 @@ func Test_getStoreItemsHandler(t *testing.T) {
 			},
 			err:   nil,
 			rcode: http.StatusOK,
-			rdata: `{"items":[{"id":1, "storeId":1, "name":"Test1", "description":"Desc 1", "price":1000},
-				{"id":2, "storeId":1, "name":"Test2", "description":"Desc 2", "price":2000}]}`,
+			rdata: `[{"id":1, "storeId":1, "name":"Test1", "description":"Desc 1", "price":1000},
+				{"id":2, "storeId":1, "name":"Test2", "description":"Desc 2", "price":2000}]`,
 		},
 		{
 			desc:    "internal error",

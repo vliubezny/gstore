@@ -1,4 +1,4 @@
-BEGIN;
+BEGIN TRANSACTION;
 
 INSERT INTO category (name) VALUES ('Electronics');
 INSERT INTO category (name) VALUES ('Computers');
@@ -11,4 +11,4 @@ INSERT INTO category (name) VALUES ('Software');
 INSERT INTO category (name) VALUES ('Sports & Outdoors');
 INSERT INTO category (name) VALUES ('Toys and Games');
 
-END;
+COMMIT TRANSACTION;

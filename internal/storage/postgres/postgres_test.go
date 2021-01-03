@@ -64,6 +64,7 @@ func setup() func() {
 	}
 
 	dsn := fmt.Sprintf("host=%s port=%d user=postgres password=root dbname=postgres sslmode=disable", host, port.Int())
+	logrus.Info(dsn)
 	db = MustSetupDB(dsn, 0, 1, "../../../scripts/migrations/postgres/")
 
 	shutdownFn := func() {
@@ -99,10 +100,9 @@ func TestPg_GetStores(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	_, err := db.Exec(`BEGIN;
-	INSERT INTO store (name) VALUES ('iStore');
-	INSERT INTO store (name) VALUES ('Amazon');
-	END;`)
+	_, err := db.Exec(`INSERT INTO store (name) VALUES
+	('iStore'),
+	('Amazon');`)
 	require.NoError(t, err)
 
 	stores, err := s.GetStores(ctx)
