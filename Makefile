@@ -70,13 +70,13 @@ install-migrate:
 check-mockgen-version: ACTUAL_MOCKGEN_VERSION := $(shell $(MOCKGEN_NAME) --version 2>/dev/null)
 check-mockgen-version:
 	[ -z $(ACTUAL_MOCKGEN_VERSION) ] && \
-		echo 'Mockgen is not installed, run `make mockgen-install`' && \
+		echo 'Mockgen is not installed, run `make install-mockgen`' && \
 		exit 1 || true
 
 	if [ $(ACTUAL_MOCKGEN_VERSION) != $(MOCKGEN_VERSION) ] ; then \
 		echo $(MOCKGEN_NAME) is version $(ACTUAL_MOCKGEN_VERSION), want $(MOCKGEN_VERSION) ; \
 		echo 'Make sure $$GOBIN has precedence in $$PATH and' \
-		'run `make mockgen-install` to install the correct version' ; \
+		'run `make install-mockgen` to install the correct version' ; \
 		exit 1 ; \
 	fi
 
@@ -84,13 +84,13 @@ check-mockgen-version:
 check-migrate-version: ACTUAL_MIGRATE_VERSION := $(shell $(MIGRATE_NAME) -version 2>&1)
 check-migrate-version:
 	[ -z $(ACTUAL_MIGRATE_VERSION) ] && \
-		echo 'Migrate is not installed, run `make migrate-install`' && \
+		echo 'Migrate is not installed, run `make install-migrate`' && \
 		exit 1 || true
 
 	if [ $(ACTUAL_MIGRATE_VERSION) != $(MIGRATE_VERSION) ] ; then \
 		echo $(MIGRATE_NAME) is version $(ACTUAL_MIGRATE_VERSION), want $(MIGRATE_VERSION) ; \
 		echo 'Make sure $$GOBIN has precedence in $$PATH and' \
-		'run `make migrate-install` to install the correct version' ; \
+		'run `make install-migrate` to install the correct version' ; \
 		exit 1 ; \
 	fi
 
