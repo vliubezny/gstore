@@ -1,46 +1,81 @@
 package server
 
 import (
-	"encoding/json"
 	"net/http"
+	"strconv"
 
-	"github.com/sirupsen/logrus"
+	"github.com/go-chi/chi"
 )
 
 func (s *server) getCategoriesHandler(w http.ResponseWriter, r *http.Request) {
+	l := getLogger(r)
+
 	categories, err := s.s.GetCategories(r.Context())
 	if err != nil {
-		writeInternalError(w, err)
+		writeInternalError(l.WithError(err), w, "fail to get categories")
 		return
 	}
 
-	resp := GetCategoriesResponse{
-		Categories: make([]*Category, len(categories)),
-	}
+	resp := make([]*category, len(categories))
 
 	for i, c := range categories {
-		resp.Categories[i] = &Category{
+		resp[i] = &category{
 			ID:   c.ID,
 			Name: c.Name,
 		}
 	}
 
-	body, err := json.Marshal(resp)
+	writeOK(l, w, resp)
+}
+
+func (s *server) getStoresHandler(w http.ResponseWriter, r *http.Request) {
+	l := getLogger(r)
+
+	stores, err := s.s.GetStores(r.Context())
 	if err != nil {
-		writeInternalError(w, err)
+		writeInternalError(l.WithError(err), w, "fail to get stores")
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	w.Write(body)
+	resp := make([]*store, len(stores))
+
+	for i, c := range stores {
+		resp[i] = &store{
+			ID:   c.ID,
+			Name: c.Name,
+		}
+	}
+
+	writeOK(l, w, resp)
 }
 
-func writeInternalError(w http.ResponseWriter, err error) {
-	logrus.WithError(err).Error("internal error")
-	body, _ := json.Marshal(Error{
-		Error: "internal error",
-	})
+func (s *server) getStoreItemsHandler(w http.ResponseWriter, r *http.Request) {
+	l := getLogger(r)
 
-	w.WriteHeader(http.StatusInternalServerError)
-	w.Write(body)
+	sid := chi.URLParam(r, "id")
+	storeID, err := strconv.ParseInt(sid, 10, 64)
+	if err != nil {
+		writeError(l.WithError(err), w, http.StatusBadRequest, "invalid storeId")
+		return
+	}
+
+	items, err := s.s.GetStoreItems(r.Context(), storeID)
+	if err != nil {
+		writeInternalError(l.WithError(err), w, "fail to get items")
+		return
+	}
+
+	resp := make([]*item, len(items))
+
+	for i, c := range items {
+		resp[i] = &item{
+			ID:          c.ID,
+			StoreID:     c.StoreID,
+			Name:        c.Name,
+			Description: c.Description,
+			Price:       c.Price,
+		}
+	}
+
+	writeOK(l, w, resp)
 }

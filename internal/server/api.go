@@ -1,17 +1,25 @@
 package server
 
-// Error represents error response
-type Error struct {
+// errorResponse represents error response
+type errorResponse struct {
 	Error string `json:"error"`
 }
 
-// Category represents category object.
-type Category struct {
+// category represents category object.
+type category struct {
 	ID   int64  `json:"id"`
 	Name string `json:"name"`
 }
 
-// GetCategoriesResponse represents category list response.
-type GetCategoriesResponse struct {
-	Categories []*Category `json:"categories"`
+type store struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
+type item struct {
+	ID          int64  `json:"id"`
+	StoreID     int64  `json:"storeId"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Price       int64  `json:"price"`
 }

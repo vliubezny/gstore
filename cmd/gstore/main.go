@@ -14,7 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/vliubezny/gstore/internal/server"
 	"github.com/vliubezny/gstore/internal/service"
-	"github.com/vliubezny/gstore/internal/storage/mem"
+	"github.com/vliubezny/gstore/internal/storage/postgres"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -25,6 +25,11 @@ var opts = struct {
 	Port int    `long:"http.port" env:"HTTP_PORT" default:"8080" description:"port to listen"`
 
 	LogLevel string `long:"log.level" env:"LOG_LEVEL" default:"debug" description:"Log level" choice:"debug" choice:"info" choice:"warning" choice:"error"`
+
+	PostgresDSN                string `long:"postgres" env:"POSTGRES_DSN" default:"host=localhost port=5432 user=postgres password=root dbname=postgres sslmode=disable" description:"postgres dsn"`
+	PostgresMaxOpenConnections int    `long:"postgres.max_open_connections" env:"POSTGRES_MAX_OPEN_CONNECTIONS" default:"0" description:"postgres maximal open connections count, 0 means unlimited"`
+	PostgresMaxIdleConnections int    `long:"postgres.max_idle_connections" env:"POSTGRES_MAX_IDLE_CONNECTIONS" default:"5" description:"postgres maximal idle connections count"`
+	PostgresMigrations         string `long:"postgres.migrations" env:"POSTGRES_MIGRATIONS" default:"scripts/migrations/postgres" description:"postgres migrations directory"`
 }{}
 
 func main() {
@@ -49,9 +54,11 @@ func main() {
 	logrus.Info("starting service")
 	logrus.Infof("%+v", opts) // can print secrets!
 
+	db := postgres.MustSetupDB(opts.PostgresDSN, opts.PostgresMaxOpenConnections,
+		opts.PostgresMaxIdleConnections, opts.PostgresMigrations)
 	r := chi.NewMux()
 
-	server.SetupRouter(service.New(mem.New()), r)
+	server.SetupRouter(service.New(postgres.New(db)), r)
 
 	srv := http.Server{
 		Addr:    fmt.Sprintf("%s:%d", opts.Host, opts.Port),

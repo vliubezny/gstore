@@ -1,7 +1,12 @@
 package server
 
 import (
+	"encoding/json"
+	"net/http"
+	"runtime/debug"
+
 	"github.com/go-chi/chi"
+	"github.com/sirupsen/logrus"
 	"github.com/vliubezny/gstore/internal/service"
 )
 
@@ -15,5 +20,50 @@ func SetupRouter(s service.Service, r chi.Router) {
 		s: s,
 	}
 
+	r.Use(
+		loggerMiddleware,
+		setContentTypeMiddleware(contentTypeJSON),
+		recoveryMiddleware,
+	)
+
 	r.Get("/v1/categories", srv.getCategoriesHandler)
+	r.Get("/v1/stores", srv.getStoresHandler)
+	r.Get("/v1/stores/{id}/items", srv.getStoreItemsHandler)
+}
+
+func getLogger(r *http.Request) logrus.FieldLogger {
+	return r.Context().Value(loggerKey{}).(logrus.FieldLogger)
+}
+
+func writeError(l logrus.FieldLogger, w http.ResponseWriter, code int, message string) {
+	l.Error(message)
+
+	body, _ := json.Marshal(errorResponse{
+		Error: message,
+	})
+
+	w.WriteHeader(code)
+	w.Write(body)
+}
+
+func writeInternalError(l logrus.FieldLogger, w http.ResponseWriter, message string) {
+	l.Errorf("%s\n%s", message, string(debug.Stack()))
+
+	body, _ := json.Marshal(errorResponse{
+		Error: "internal error",
+	})
+
+	w.WriteHeader(http.StatusInternalServerError)
+	w.Write(body)
+}
+
+func writeOK(l logrus.FieldLogger, w http.ResponseWriter, payload interface{}) {
+	body, err := json.Marshal(payload)
+	if err != nil {
+		writeInternalError(l.WithError(err), w, "fail to serialize payload")
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(body)
 }

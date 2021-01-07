@@ -5,5 +5,16 @@ services:
     image: gstore-local:latest
     container_name: gstore
     restart: always
+    environment:
+      - POSTGRES_DSN=host=gstore-db port=5432 user=postgres password=root dbname=postgres sslmode=disable
     ports:
       - "8080:8080"
+
+  gstore-db:
+    image: postgres:13
+    container_name: gstore-db
+    restart: always
+    environment:
+      - POSTGRES_PASSWORD=root
+    ports:
+      - "5432:5432"

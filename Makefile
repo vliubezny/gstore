@@ -7,6 +7,9 @@ GOBIN := $(shell go env GOPATH)/bin
 MOCKGEN_NAME := mockgen
 MOCKGEN_VERSION := v1.4.4
 
+MIGRATE_NAME := migrate
+MIGRATE_VERSION := v4.14.1
+
 default: build
 
 .PHONY: build
@@ -33,7 +36,11 @@ clean:
 .PHONY: test
 test: GO_TEST_FLAGS := -race
 test:
-	go test -mod=vendor -v $(GO_TEST_FLAGS) ./...
+	go test -mod=vendor -v $(GO_TEST_FLAGS) $(GO_TEST_TAGS) ./...
+
+.PHONY: fulltest
+fulltest: GO_TEST_TAGS := --tags=integration
+fulltest: test
 
 .PHONY: vendor
 vendor:
@@ -52,22 +59,47 @@ install-mockgen:
 	cd $(TMPDIR) && GO111MODULE=on go get github.com/golang/mock/mockgen@$(MOCKGEN_VERSION)
 	@echo DONE
 
+.PHONY: install-migrate
+install-migrate:
+	@echo INSTALLING $(MIGRATE_NAME) for MacOS
+	@echo 'Check https://github.com/golang-migrate/migrate/blob/master/cmd/migrate/README.md for details'
+	brew install golang-migrate
+	@echo DONE
+
 .PHONY: check-mockgen-version
 check-mockgen-version: ACTUAL_MOCKGEN_VERSION := $(shell $(MOCKGEN_NAME) --version 2>/dev/null)
 check-mockgen-version:
 	[ -z $(ACTUAL_MOCKGEN_VERSION) ] && \
-		echo 'Mockgen is not installed, run `make mockgen-install`' && \
+		echo 'Mockgen is not installed, run `make install-mockgen`' && \
 		exit 1 || true
 
 	if [ $(ACTUAL_MOCKGEN_VERSION) != $(MOCKGEN_VERSION) ] ; then \
 		echo $(MOCKGEN_NAME) is version $(ACTUAL_MOCKGEN_VERSION), want $(MOCKGEN_VERSION) ; \
 		echo 'Make sure $$GOBIN has precedence in $$PATH and' \
-		'run `make mockgen-install` to install the correct version' ; \
-    exit 1 ; \
+		'run `make install-mockgen` to install the correct version' ; \
+		exit 1 ; \
+	fi
+
+.PHONY: check-migrate-version
+check-migrate-version: ACTUAL_MIGRATE_VERSION := $(shell $(MIGRATE_NAME) -version 2>&1)
+check-migrate-version:
+	[ -z $(ACTUAL_MIGRATE_VERSION) ] && \
+		echo 'Migrate is not installed, run `make install-migrate`' && \
+		exit 1 || true
+
+	if [ $(ACTUAL_MIGRATE_VERSION) != $(MIGRATE_VERSION) ] ; then \
+		echo $(MIGRATE_NAME) is version $(ACTUAL_MIGRATE_VERSION), want $(MIGRATE_VERSION) ; \
+		echo 'Make sure $$GOBIN has precedence in $$PATH and' \
+		'run `make install-migrate` to install the correct version' ; \
+		exit 1 ; \
 	fi
 
 .PHONY: check-all
-check-all: check-mockgen-version
+check-all: check-mockgen-version check-migrate-version
 
 .PHONY: install-all
-install-all: install-mockgen
+install-all: install-mockgen install-migrate
+
+.PHONY: new-migration
+new-migration:
+	migrate create -ext sql -dir scripts/migrations/postgres -seq $(NAME)
