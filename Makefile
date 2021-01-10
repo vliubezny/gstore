@@ -39,7 +39,7 @@ test:
 	go test -mod=vendor -v $(GO_TEST_FLAGS) $(GO_TEST_TAGS) ./...
 
 .PHONY: fulltest
-fulltest: GO_TEST_TAGS := --tags=integration
+fulltest: GO_TEST_TAGS := -tags=integration
 fulltest: test
 
 .PHONY: vendor
@@ -103,3 +103,15 @@ install-all: install-mockgen install-migrate
 .PHONY: new-migration
 new-migration:
 	migrate create -ext sql -dir scripts/migrations/postgres -seq $(NAME)
+
+.PHONY: dev-start
+dev-start:
+	docker-compose -f scripts/docker-compose.yml up -d gstore-db
+
+.PHONY: dev-stop
+dev-stop:
+	docker-compose -f scripts/docker-compose.yml down
+
+.PHONY: run
+run:
+	go run cmd/gstore/main.go
