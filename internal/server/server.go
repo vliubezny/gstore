@@ -27,6 +27,11 @@ func SetupRouter(s service.Service, r chi.Router) {
 	)
 
 	r.Get("/v1/categories", srv.getCategoriesHandler)
+	r.Post("/v1/categories", srv.createCategoryHandler)
+	r.Get("/v1/categories/{id}", srv.getCategoryHandler)
+	r.Put("/v1/categories/{id}", srv.updateCategoryHandler)
+	r.Delete("/v1/categories/{id}", srv.deleteCategoryHandler)
+
 	r.Get("/v1/stores", srv.getStoresHandler)
 	r.Get("/v1/stores/{id}/items", srv.getStoreItemsHandler)
 }

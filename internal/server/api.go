@@ -1,5 +1,10 @@
 package server
 
+import (
+	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/vliubezny/gstore/internal/model"
+)
+
 // errorResponse represents error response
 type errorResponse struct {
 	Error string `json:"error"`
@@ -9,6 +14,26 @@ type errorResponse struct {
 type category struct {
 	ID   int64  `json:"id"`
 	Name string `json:"name"`
+}
+
+func newCategory(c *model.Category) category {
+	return category{
+		ID:   c.ID,
+		Name: c.Name,
+	}
+}
+
+func (c category) toModel() *model.Category {
+	return &model.Category{
+		ID:   c.ID,
+		Name: c.Name,
+	}
+}
+
+func (c category) Validate() error {
+	return validation.ValidateStruct(&c,
+		validation.Field(&c.Name, validation.Required, validation.Length(2, 80)),
+	)
 }
 
 type store struct {

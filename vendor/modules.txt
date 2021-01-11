@@ -55,6 +55,9 @@ github.com/docker/go-units
 # github.com/go-chi/chi v1.5.1
 ## explicit
 github.com/go-chi/chi
+# github.com/go-ozzo/ozzo-validation/v4 v4.3.0
+## explicit
+github.com/go-ozzo/ozzo-validation/v4
 # github.com/gogo/protobuf v1.3.1
 github.com/gogo/protobuf/proto
 # github.com/golang-migrate/migrate/v4 v4.14.1

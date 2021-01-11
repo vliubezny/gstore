@@ -1,11 +1,13 @@
 package server
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/go-chi/chi"
@@ -68,6 +70,292 @@ func Test_getCategoriesHandler(t *testing.T) {
 
 			assert.Equal(t, tC.rcode, rec.Result().StatusCode)
 			assert.JSONEq(t, tC.rdata, string(body))
+		})
+	}
+}
+
+func Test_getCategoryHandler(t *testing.T) {
+	testCases := []struct {
+		desc     string
+		category *model.Category
+		id       string
+		err      error
+		rcode    int
+		rdata    string
+	}{
+		{
+			desc:     "success",
+			category: &model.Category{ID: 1, Name: "Test1"},
+			id:       "1",
+			err:      nil,
+			rcode:    http.StatusOK,
+			rdata:    `{"id":1, "name":"Test1"}`,
+		},
+		{
+			desc:     "invalid category ID",
+			id:       "test",
+			category: nil,
+			err:      errSkip,
+			rcode:    http.StatusBadRequest,
+			rdata:    `{"error":"invalid category ID"}`,
+		},
+		{
+			desc:     "not found",
+			id:       "1",
+			category: nil,
+			err:      service.ErrNotFound,
+			rcode:    http.StatusNotFound,
+			rdata:    `{"error":"category not found"}`,
+		},
+		{
+			desc:     "internal error",
+			category: nil,
+			id:       "1",
+			err:      errTest,
+			rcode:    http.StatusInternalServerError,
+			rdata:    `{"error":"internal error"}`,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			svc := service.NewMockService(ctrl)
+			if tC.err != errSkip {
+				svc.EXPECT().GetCategory(gomock.Any(), int64(1)).Return(tC.category, tC.err)
+			}
+
+			router := chi.NewRouter()
+			SetupRouter(svc, router)
+
+			test.NewGlobal()
+			rec := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/v1/categories/%s", tC.id), nil)
+
+			router.ServeHTTP(rec, r)
+
+			body, _ := ioutil.ReadAll(rec.Result().Body)
+
+			assert.Equal(t, tC.rcode, rec.Result().StatusCode)
+			assert.JSONEq(t, tC.rdata, string(body))
+		})
+	}
+}
+
+func Test_createCategoryHandler(t *testing.T) {
+	testCases := []struct {
+		desc     string
+		category *model.Category
+		err      error
+		input    string
+		rcode    int
+		rdata    string
+	}{
+		{
+			desc:     "success",
+			category: &model.Category{Name: "Test1"},
+			err:      nil,
+			input:    `{"name": "Test1"}`,
+			rcode:    http.StatusOK,
+			rdata:    `{"id":1, "name":"Test1"}`,
+		},
+		{
+			desc:     "invalid: missing name",
+			category: nil,
+			input:    `{}`,
+			err:      errSkip,
+			rcode:    http.StatusBadRequest,
+			rdata:    `{"error":"name: cannot be blank."}`,
+		},
+		{
+			desc:     "internal error",
+			category: &model.Category{Name: "Test1"},
+			err:      errTest,
+			input:    `{"name": "Test1"}`,
+			rcode:    http.StatusInternalServerError,
+			rdata:    `{"error":"internal error"}`,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			svc := service.NewMockService(ctrl)
+			if tC.err != errSkip {
+				svc.EXPECT().CreateCategory(gomock.Any(), tC.category).DoAndReturn(func(_ context.Context, c *model.Category) error {
+					c.ID = 1
+					return tC.err
+				})
+			}
+
+			router := chi.NewRouter()
+			SetupRouter(svc, router)
+
+			test.NewGlobal()
+			rec := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodPost, "/v1/categories", strings.NewReader(tC.input))
+			r.Header.Set(headerContentType, contentTypeJSON)
+
+			router.ServeHTTP(rec, r)
+
+			body, _ := ioutil.ReadAll(rec.Result().Body)
+
+			assert.Equal(t, tC.rcode, rec.Result().StatusCode)
+			assert.JSONEq(t, tC.rdata, string(body))
+		})
+	}
+}
+
+func Test_updateCategoryHandler(t *testing.T) {
+	testCases := []struct {
+		desc     string
+		category *model.Category
+		err      error
+		id       string
+		input    string
+		rcode    int
+		rdata    string
+	}{
+		{
+			desc:     "success",
+			category: &model.Category{ID: 1, Name: "Test1"},
+			err:      nil,
+			id:       "1",
+			input:    `{"name": "Test1"}`,
+			rcode:    http.StatusOK,
+			rdata:    `{"id":1, "name":"Test1"}`,
+		},
+		{
+			desc:     "invalid: missing name",
+			category: nil,
+			id:       "1",
+			input:    `{}`,
+			err:      errSkip,
+			rcode:    http.StatusBadRequest,
+			rdata:    `{"error":"name: cannot be blank."}`,
+		},
+		{
+			desc:     "invalid category ID",
+			category: nil,
+			id:       "test",
+			input:    `{"name": "Test1"}`,
+			err:      errSkip,
+			rcode:    http.StatusBadRequest,
+			rdata:    `{"error":"invalid category ID"}`,
+		},
+		{
+			desc:     "not found",
+			category: &model.Category{ID: 1, Name: "Test1"},
+			id:       "1",
+			input:    `{"name": "Test1"}`,
+			err:      service.ErrNotFound,
+			rcode:    http.StatusNotFound,
+			rdata:    `{"error":"category not found"}`,
+		},
+		{
+			desc:     "internal error",
+			category: &model.Category{ID: 1, Name: "Test1"},
+			err:      errTest,
+			id:       "1",
+			input:    `{"name": "Test1"}`,
+			rcode:    http.StatusInternalServerError,
+			rdata:    `{"error":"internal error"}`,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			svc := service.NewMockService(ctrl)
+			if tC.err != errSkip {
+				svc.EXPECT().UpdateCategory(gomock.Any(), tC.category).Return(tC.err)
+			}
+
+			router := chi.NewRouter()
+			SetupRouter(svc, router)
+
+			test.NewGlobal()
+			rec := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/v1/categories/%s", tC.id), strings.NewReader(tC.input))
+			r.Header.Set(headerContentType, contentTypeJSON)
+
+			router.ServeHTTP(rec, r)
+
+			body, _ := ioutil.ReadAll(rec.Result().Body)
+
+			assert.Equal(t, tC.rcode, rec.Result().StatusCode)
+			assert.JSONEq(t, tC.rdata, string(body))
+		})
+	}
+}
+
+func Test_deleteCategoryHandler(t *testing.T) {
+	testCases := []struct {
+		desc  string
+		id    string
+		err   error
+		rcode int
+		rdata string
+	}{
+		{
+			desc:  "success",
+			id:    "1",
+			err:   nil,
+			rcode: http.StatusNoContent,
+			rdata: "",
+		},
+		{
+			desc:  "invalid category ID",
+			id:    "test",
+			err:   errSkip,
+			rcode: http.StatusBadRequest,
+			rdata: `{"error":"invalid category ID"}`,
+		},
+		{
+			desc:  "not found",
+			id:    "1",
+			err:   service.ErrNotFound,
+			rcode: http.StatusNotFound,
+			rdata: `{"error":"category not found"}`,
+		},
+		{
+			desc:  "internal error",
+			id:    "1",
+			err:   errTest,
+			rcode: http.StatusInternalServerError,
+			rdata: `{"error":"internal error"}`,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			svc := service.NewMockService(ctrl)
+			if tC.err != errSkip {
+				svc.EXPECT().DeleteCategory(gomock.Any(), int64(1)).Return(tC.err)
+			}
+
+			router := chi.NewRouter()
+			SetupRouter(svc, router)
+
+			test.NewGlobal()
+			rec := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/v1/categories/%s", tC.id), nil)
+
+			router.ServeHTTP(rec, r)
+
+			body, _ := ioutil.ReadAll(rec.Result().Body)
+
+			assert.Equal(t, tC.rcode, rec.Result().StatusCode)
+			if tC.rdata == "" {
+				assert.Empty(t, string(body))
+			} else {
+				assert.JSONEq(t, tC.rdata, string(body))
+			}
 		})
 	}
 }
@@ -153,20 +441,20 @@ func Test_getStoreItemsHandler(t *testing.T) {
 			rdata:   `{"error":"internal error"}`,
 		},
 		{
-			desc:    "empty storeId",
+			desc:    "empty store ID",
 			storeID: "",
 			items:   []*model.Item{},
 			err:     errSkip,
 			rcode:   http.StatusBadRequest,
-			rdata:   `{"error":"invalid storeId"}`,
+			rdata:   `{"error":"invalid store ID"}`,
 		},
 		{
-			desc:    "invalid storeId",
+			desc:    "invalid store ID",
 			storeID: "test",
 			items:   []*model.Item{},
 			err:     errSkip,
 			rcode:   http.StatusBadRequest,
-			rdata:   `{"error":"invalid storeId"}`,
+			rdata:   `{"error":"invalid store ID"}`,
 		},
 	}
 	for _, tC := range testCases {
