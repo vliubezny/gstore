@@ -25,22 +25,27 @@ func SetupRouter(s service.Service, r chi.Router, a auth.Authenticator) {
 		loggerMiddleware,
 		setContentTypeMiddleware(contentTypeJSON),
 		recoveryMiddleware,
-		basicAuthMiddleware(a),
 	)
 
 	r.Get("/v1/categories", srv.getCategoriesHandler)
-	r.Post("/v1/categories", srv.createCategoryHandler)
 	r.Get("/v1/categories/{id}", srv.getCategoryHandler)
-	r.Put("/v1/categories/{id}", srv.updateCategoryHandler)
-	r.Delete("/v1/categories/{id}", srv.deleteCategoryHandler)
 
 	r.Get("/v1/stores", srv.getStoresHandler)
-	r.Post("/v1/stores", srv.createStoreHandler)
 	r.Get("/v1/stores/{id}", srv.getStoreHandler)
-	r.Put("/v1/stores/{id}", srv.updateStoreHandler)
-	r.Delete("/v1/stores/{id}", srv.deleteStoreHandler)
 
 	r.Get("/v1/stores/{id}/items", srv.getStoreItemsHandler)
+
+	r.Group(func(r chi.Router) {
+		r.Use(basicAuthMiddleware(a))
+
+		r.Post("/v1/categories", srv.createCategoryHandler)
+		r.Put("/v1/categories/{id}", srv.updateCategoryHandler)
+		r.Delete("/v1/categories/{id}", srv.deleteCategoryHandler)
+
+		r.Post("/v1/stores", srv.createStoreHandler)
+		r.Put("/v1/stores/{id}", srv.updateStoreHandler)
+		r.Delete("/v1/stores/{id}", srv.deleteStoreHandler)
+	})
 }
 
 func getLogger(r *http.Request) logrus.FieldLogger {

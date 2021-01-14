@@ -59,23 +59,21 @@ func recoveryMiddleware(next http.Handler) http.Handler {
 func basicAuthMiddleware(a auth.Authenticator) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.Method == http.MethodPost || r.Method == http.MethodPut || r.Method == http.MethodDelete {
-				username, password, ok := r.BasicAuth()
-				if !ok {
-					writeError(getLogger(r), w, http.StatusUnauthorized, "Unauthorized")
-					return
-				}
+			username, password, ok := r.BasicAuth()
+			if !ok {
+				writeError(getLogger(r), w, http.StatusUnauthorized, "Unauthorized")
+				return
+			}
 
-				ok, err := a.Authenticate(username, password)
-				if err != nil {
-					writeInternalError(getLogger(r).WithError(err), w, "failed to get authenticate user")
-					return
-				}
+			ok, err := a.Authenticate(username, password)
+			if err != nil {
+				writeInternalError(getLogger(r).WithError(err), w, "failed to get authenticate user")
+				return
+			}
 
-				if !ok {
-					writeError(getLogger(r), w, http.StatusUnauthorized, "Unauthorized")
-					return
-				}
+			if !ok {
+				writeError(getLogger(r), w, http.StatusUnauthorized, "Unauthorized")
+				return
 			}
 			next.ServeHTTP(w, r)
 		})

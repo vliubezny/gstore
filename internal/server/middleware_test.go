@@ -83,7 +83,6 @@ func Test_basicAuthMiddleware(t *testing.T) {
 	password := "pass"
 	testCases := []struct {
 		desc     string
-		method   string
 		withAuth bool
 		valid    bool
 		err      error
@@ -91,17 +90,7 @@ func Test_basicAuthMiddleware(t *testing.T) {
 		rdata    string
 	}{
 		{
-			desc:     "GET: allow anonymous",
-			method:   http.MethodGet,
-			withAuth: false,
-			valid:    false,
-			err:      errSkip,
-			rcode:    http.StatusOK,
-			rdata:    `{"result":"OK"}`,
-		},
-		{
-			desc:     "POST: block anonymous",
-			method:   http.MethodPost,
+			desc:     "block anonymous",
 			withAuth: false,
 			valid:    false,
 			err:      errSkip,
@@ -109,26 +98,7 @@ func Test_basicAuthMiddleware(t *testing.T) {
 			rdata:    `{"error":"Unauthorized"}`,
 		},
 		{
-			desc:     "PUT: block anonymous",
-			method:   http.MethodPut,
-			withAuth: false,
-			valid:    false,
-			err:      errSkip,
-			rcode:    http.StatusUnauthorized,
-			rdata:    `{"error":"Unauthorized"}`,
-		},
-		{
-			desc:     "DELETE: block anonymous",
-			method:   http.MethodDelete,
-			withAuth: false,
-			valid:    false,
-			err:      errSkip,
-			rcode:    http.StatusUnauthorized,
-			rdata:    `{"error":"Unauthorized"}`,
-		},
-		{
-			desc:     "POST: block invalid credentials",
-			method:   http.MethodPost,
+			desc:     "block invalid credentials",
 			withAuth: true,
 			valid:    false,
 			err:      nil,
@@ -136,8 +106,7 @@ func Test_basicAuthMiddleware(t *testing.T) {
 			rdata:    `{"error":"Unauthorized"}`,
 		},
 		{
-			desc:     "POST: allow valid credentials",
-			method:   http.MethodPost,
+			desc:     "allow valid credentials",
 			withAuth: true,
 			valid:    true,
 			err:      nil,
@@ -145,8 +114,7 @@ func Test_basicAuthMiddleware(t *testing.T) {
 			rdata:    `{"result":"OK"}`,
 		},
 		{
-			desc:     "POST: auth internal error",
-			method:   http.MethodPost,
+			desc:     "auth internal error",
 			withAuth: true,
 			valid:    false,
 			err:      errTest,
@@ -159,7 +127,7 @@ func Test_basicAuthMiddleware(t *testing.T) {
 			logger, _ := test.NewNullLogger()
 			ctx := context.WithValue(context.Background(), loggerKey{}, logger)
 			rec := httptest.NewRecorder()
-			req := httptest.NewRequest(tC.method, "/", nil).WithContext(ctx)
+			req := httptest.NewRequest(http.MethodPost, "/", nil).WithContext(ctx)
 
 			if tC.withAuth {
 				req.SetBasicAuth(username, password)
