@@ -12,6 +12,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/jessevdk/go-flags"
 	"github.com/sirupsen/logrus"
+	"github.com/vliubezny/gstore/internal/auth"
 	"github.com/vliubezny/gstore/internal/server"
 	"github.com/vliubezny/gstore/internal/service"
 	"github.com/vliubezny/gstore/internal/storage/postgres"
@@ -25,6 +26,9 @@ var opts = struct {
 	Port int    `long:"http.port" env:"HTTP_PORT" default:"8080" description:"port to listen"`
 
 	LogLevel string `long:"log.level" env:"LOG_LEVEL" default:"debug" description:"Log level" choice:"debug" choice:"info" choice:"warning" choice:"error"`
+
+	Username string `long:"auth.username" env:"AUTH_USERNAME" default:"admin" description:"username with full access"`
+	Password string `long:"auth.password" env:"AUTH_PASSWORD" default:"changeme" description:"user password"`
 
 	PostgresDSN                string `long:"postgres" env:"POSTGRES_DSN" default:"host=localhost port=5432 user=postgres password=root dbname=postgres sslmode=disable" description:"postgres dsn"`
 	PostgresMaxOpenConnections int    `long:"postgres.max_open_connections" env:"POSTGRES_MAX_OPEN_CONNECTIONS" default:"0" description:"postgres maximal open connections count, 0 means unlimited"`
@@ -58,7 +62,9 @@ func main() {
 		opts.PostgresMaxIdleConnections, opts.PostgresMigrations)
 	r := chi.NewMux()
 
-	server.SetupRouter(service.New(postgres.New(db)), r)
+	a := auth.NewStataticAuthenticator(opts.Username, opts.Password)
+
+	server.SetupRouter(service.New(postgres.New(db)), r, a)
 
 	srv := http.Server{
 		Addr:    fmt.Sprintf("%s:%d", opts.Host, opts.Port),

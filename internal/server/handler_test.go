@@ -6,13 +6,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/http/httptest"
-	"strings"
 	"testing"
 
-	"github.com/go-chi/chi"
 	"github.com/golang/mock/gomock"
-	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/vliubezny/gstore/internal/model"
 	"github.com/vliubezny/gstore/internal/service"
@@ -57,12 +53,8 @@ func Test_getCategoriesHandler(t *testing.T) {
 			svc := service.NewMockService(ctrl)
 			svc.EXPECT().GetCategories(gomock.Any()).Return(tC.categories, tC.err)
 
-			router := chi.NewRouter()
-			SetupRouter(svc, router)
-
-			test.NewGlobal()
-			rec := httptest.NewRecorder()
-			r := httptest.NewRequest(http.MethodGet, "/v1/categories", nil)
+			router := setupTestRouter(svc)
+			rec, r := newTestParameters(http.MethodGet, "/v1/categories", "")
 
 			router.ServeHTTP(rec, r)
 
@@ -126,12 +118,8 @@ func Test_getCategoryHandler(t *testing.T) {
 				svc.EXPECT().GetCategory(gomock.Any(), int64(1)).Return(tC.category, tC.err)
 			}
 
-			router := chi.NewRouter()
-			SetupRouter(svc, router)
-
-			test.NewGlobal()
-			rec := httptest.NewRecorder()
-			r := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/v1/categories/%s", tC.id), nil)
+			router := setupTestRouter(svc)
+			rec, r := newTestParameters(http.MethodGet, fmt.Sprintf("/v1/categories/%s", tC.id), "")
 
 			router.ServeHTTP(rec, r)
 
@@ -190,13 +178,8 @@ func Test_createCategoryHandler(t *testing.T) {
 				})
 			}
 
-			router := chi.NewRouter()
-			SetupRouter(svc, router)
-
-			test.NewGlobal()
-			rec := httptest.NewRecorder()
-			r := httptest.NewRequest(http.MethodPost, "/v1/categories", strings.NewReader(tC.input))
-			r.Header.Set(headerContentType, contentTypeJSON)
+			router := setupTestRouter(svc)
+			rec, r := newTestParametersWithAuth(http.MethodPost, "/v1/categories", tC.input)
 
 			router.ServeHTTP(rec, r)
 
@@ -274,13 +257,8 @@ func Test_updateCategoryHandler(t *testing.T) {
 				svc.EXPECT().UpdateCategory(gomock.Any(), tC.category).Return(tC.err)
 			}
 
-			router := chi.NewRouter()
-			SetupRouter(svc, router)
-
-			test.NewGlobal()
-			rec := httptest.NewRecorder()
-			r := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/v1/categories/%s", tC.id), strings.NewReader(tC.input))
-			r.Header.Set(headerContentType, contentTypeJSON)
+			router := setupTestRouter(svc)
+			rec, r := newTestParametersWithAuth(http.MethodPut, fmt.Sprintf("/v1/categories/%s", tC.id), tC.input)
 
 			router.ServeHTTP(rec, r)
 
@@ -339,12 +317,8 @@ func Test_deleteCategoryHandler(t *testing.T) {
 				svc.EXPECT().DeleteCategory(gomock.Any(), int64(1)).Return(tC.err)
 			}
 
-			router := chi.NewRouter()
-			SetupRouter(svc, router)
-
-			test.NewGlobal()
-			rec := httptest.NewRecorder()
-			r := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/v1/categories/%s", tC.id), nil)
+			router := setupTestRouter(svc)
+			rec, r := newTestParametersWithAuth(http.MethodDelete, fmt.Sprintf("/v1/categories/%s", tC.id), "")
 
 			router.ServeHTTP(rec, r)
 
@@ -394,12 +368,8 @@ func Test_getStoresHandler(t *testing.T) {
 			svc := service.NewMockService(ctrl)
 			svc.EXPECT().GetStores(gomock.Any()).Return(tC.stores, tC.err)
 
-			router := chi.NewRouter()
-			SetupRouter(svc, router)
-
-			test.NewGlobal()
-			rec := httptest.NewRecorder()
-			r := httptest.NewRequest(http.MethodGet, "/v1/stores", nil)
+			router := setupTestRouter(svc)
+			rec, r := newTestParameters(http.MethodGet, "/v1/stores", "")
 
 			router.ServeHTTP(rec, r)
 
@@ -467,12 +437,8 @@ func Test_getStoreItemsHandler(t *testing.T) {
 				svc.EXPECT().GetStoreItems(gomock.Any(), int64(1)).Return(tC.items, tC.err)
 			}
 
-			router := chi.NewRouter()
-			SetupRouter(svc, router)
-
-			test.NewGlobal()
-			rec := httptest.NewRecorder()
-			r := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/v1/stores/%s/items", tC.storeID), nil)
+			router := setupTestRouter(svc)
+			rec, r := newTestParameters(http.MethodGet, fmt.Sprintf("/v1/stores/%s/items", tC.storeID), "")
 
 			router.ServeHTTP(rec, r)
 

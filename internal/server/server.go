@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/sirupsen/logrus"
+	"github.com/vliubezny/gstore/internal/auth"
 	"github.com/vliubezny/gstore/internal/service"
 )
 
@@ -15,7 +16,7 @@ type server struct {
 }
 
 // SetupRouter setups routes and handlers.
-func SetupRouter(s service.Service, r chi.Router) {
+func SetupRouter(s service.Service, r chi.Router, a auth.Authenticator) {
 	srv := &server{
 		s: s,
 	}
@@ -24,6 +25,7 @@ func SetupRouter(s service.Service, r chi.Router) {
 		loggerMiddleware,
 		setContentTypeMiddleware(contentTypeJSON),
 		recoveryMiddleware,
+		basicAuthMiddleware(a),
 	)
 
 	r.Get("/v1/categories", srv.getCategoriesHandler)
