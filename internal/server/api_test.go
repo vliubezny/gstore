@@ -49,3 +49,46 @@ func Test_category_Validate(t *testing.T) {
 		})
 	}
 }
+
+func Test_store_Validate(t *testing.T) {
+	testCases := []struct {
+		desc  string
+		req   store
+		valid bool
+	}{
+		{
+			desc:  "valid_name_2",
+			req:   store{Name: "IT"},
+			valid: true,
+		},
+		{
+			desc:  "valid_name_80",
+			req:   store{Name: strings.Repeat("x", 80)},
+			valid: true,
+		},
+		{
+			desc:  "invalid_name_empty",
+			req:   store{Name: ""},
+			valid: false,
+		},
+		{
+			desc:  "invalid_name_1",
+			req:   store{Name: "x"},
+			valid: false,
+		},
+		{
+			desc:  "invalid_name_81",
+			req:   store{Name: strings.Repeat("x", 81)},
+			valid: false,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			if tC.valid {
+				assert.NoError(t, tC.req.Validate())
+			} else {
+				assert.Error(t, tC.req.Validate())
+			}
+		})
+	}
+}

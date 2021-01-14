@@ -157,6 +157,114 @@ func (s *server) getStoresHandler(w http.ResponseWriter, r *http.Request) {
 	writeOK(l, w, resp)
 }
 
+func (s *server) getStoreHandler(w http.ResponseWriter, r *http.Request) {
+	l := getLogger(r)
+
+	id := chi.URLParam(r, "id")
+	storeID, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		writeError(l.WithError(err), w, http.StatusBadRequest, "invalid store ID")
+		return
+	}
+
+	str, err := s.s.GetStore(r.Context(), storeID)
+	if err != nil {
+		if errors.Is(err, service.ErrNotFound) {
+			writeError(l.WithError(err), w, http.StatusNotFound, "store not found")
+			return
+		}
+
+		writeInternalError(l.WithError(err), w, "fail to get store")
+		return
+	}
+
+	writeOK(l, w, newStore(str))
+}
+
+func (s *server) createStoreHandler(w http.ResponseWriter, r *http.Request) {
+	l := getLogger(r)
+
+	var req store
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(l.WithError(err), w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := req.Validate(); err != nil {
+		writeError(l.WithError(err), w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	str := req.toModel()
+	if err := s.s.CreateStore(r.Context(), str); err != nil {
+		writeInternalError(l.WithError(err), w, "fail to create store")
+		return
+	}
+
+	writeOK(l, w, newStore(str))
+}
+
+func (s *server) updateStoreHandler(w http.ResponseWriter, r *http.Request) {
+	l := getLogger(r)
+
+	id := chi.URLParam(r, "id")
+	storeID, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		writeError(l.WithError(err), w, http.StatusBadRequest, "invalid store ID")
+		return
+	}
+
+	var req store
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(l.WithError(err), w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := req.Validate(); err != nil {
+		writeError(l.WithError(err), w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	str := req.toModel()
+	str.ID = storeID
+
+	if err := s.s.UpdateStore(r.Context(), str); err != nil {
+		if errors.Is(err, service.ErrNotFound) {
+			writeError(l.WithError(err), w, http.StatusNotFound, "store not found")
+			return
+		}
+
+		writeInternalError(l.WithError(err), w, "fail to update store")
+		return
+	}
+
+	writeOK(l, w, newStore(str))
+}
+
+func (s *server) deleteStoreHandler(w http.ResponseWriter, r *http.Request) {
+	l := getLogger(r)
+
+	id := chi.URLParam(r, "id")
+	storeID, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		writeError(l.WithError(err), w, http.StatusBadRequest, "invalid store ID")
+		return
+	}
+
+	err = s.s.DeleteStore(r.Context(), storeID)
+	if err != nil {
+		if errors.Is(err, service.ErrNotFound) {
+			writeError(l.WithError(err), w, http.StatusNotFound, "store not found")
+			return
+		}
+
+		writeInternalError(l.WithError(err), w, "fail to delete store")
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (s *server) getStoreItemsHandler(w http.ResponseWriter, r *http.Request) {
 	l := getLogger(r)
 

@@ -381,6 +381,274 @@ func Test_getStoresHandler(t *testing.T) {
 	}
 }
 
+func Test_getStoreHandler(t *testing.T) {
+	testCases := []struct {
+		desc  string
+		store *model.Store
+		id    string
+		err   error
+		rcode int
+		rdata string
+	}{
+		{
+			desc:  "success",
+			store: &model.Store{ID: 1, Name: "Test1"},
+			id:    "1",
+			err:   nil,
+			rcode: http.StatusOK,
+			rdata: `{"id":1, "name":"Test1"}`,
+		},
+		{
+			desc:  "invalid store ID",
+			id:    "test",
+			store: nil,
+			err:   errSkip,
+			rcode: http.StatusBadRequest,
+			rdata: `{"error":"invalid store ID"}`,
+		},
+		{
+			desc:  "not found",
+			id:    "1",
+			store: nil,
+			err:   service.ErrNotFound,
+			rcode: http.StatusNotFound,
+			rdata: `{"error":"store not found"}`,
+		},
+		{
+			desc:  "internal error",
+			store: nil,
+			id:    "1",
+			err:   errTest,
+			rcode: http.StatusInternalServerError,
+			rdata: `{"error":"internal error"}`,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			svc := service.NewMockService(ctrl)
+			if tC.err != errSkip {
+				svc.EXPECT().GetStore(gomock.Any(), int64(1)).Return(tC.store, tC.err)
+			}
+
+			router := setupTestRouter(svc)
+			rec, r := newTestParameters(http.MethodGet, fmt.Sprintf("/v1/stores/%s", tC.id), "")
+
+			router.ServeHTTP(rec, r)
+
+			body, _ := ioutil.ReadAll(rec.Result().Body)
+
+			assert.Equal(t, tC.rcode, rec.Result().StatusCode)
+			assert.JSONEq(t, tC.rdata, string(body))
+		})
+	}
+}
+
+func Test_createStoreHandler(t *testing.T) {
+	testCases := []struct {
+		desc  string
+		store *model.Store
+		err   error
+		input string
+		rcode int
+		rdata string
+	}{
+		{
+			desc:  "success",
+			store: &model.Store{Name: "Test1"},
+			err:   nil,
+			input: `{"name": "Test1"}`,
+			rcode: http.StatusOK,
+			rdata: `{"id":1, "name":"Test1"}`,
+		},
+		{
+			desc:  "invalid: missing name",
+			store: nil,
+			input: `{}`,
+			err:   errSkip,
+			rcode: http.StatusBadRequest,
+			rdata: `{"error":"name: cannot be blank."}`,
+		},
+		{
+			desc:  "internal error",
+			store: &model.Store{Name: "Test1"},
+			err:   errTest,
+			input: `{"name": "Test1"}`,
+			rcode: http.StatusInternalServerError,
+			rdata: `{"error":"internal error"}`,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			svc := service.NewMockService(ctrl)
+			if tC.err != errSkip {
+				svc.EXPECT().CreateStore(gomock.Any(), tC.store).DoAndReturn(func(_ context.Context, s *model.Store) error {
+					s.ID = 1
+					return tC.err
+				})
+			}
+
+			router := setupTestRouter(svc)
+			rec, r := newTestParametersWithAuth(http.MethodPost, "/v1/stores", tC.input)
+
+			router.ServeHTTP(rec, r)
+
+			body, _ := ioutil.ReadAll(rec.Result().Body)
+
+			assert.Equal(t, tC.rcode, rec.Result().StatusCode)
+			assert.JSONEq(t, tC.rdata, string(body))
+		})
+	}
+}
+
+func Test_updateStoreHandler(t *testing.T) {
+	testCases := []struct {
+		desc  string
+		store *model.Store
+		err   error
+		id    string
+		input string
+		rcode int
+		rdata string
+	}{
+		{
+			desc:  "success",
+			store: &model.Store{ID: 1, Name: "Test1"},
+			err:   nil,
+			id:    "1",
+			input: `{"name": "Test1"}`,
+			rcode: http.StatusOK,
+			rdata: `{"id":1, "name":"Test1"}`,
+		},
+		{
+			desc:  "invalid: missing name",
+			store: nil,
+			id:    "1",
+			input: `{}`,
+			err:   errSkip,
+			rcode: http.StatusBadRequest,
+			rdata: `{"error":"name: cannot be blank."}`,
+		},
+		{
+			desc:  "invalid store ID",
+			store: nil,
+			id:    "test",
+			input: `{"name": "Test1"}`,
+			err:   errSkip,
+			rcode: http.StatusBadRequest,
+			rdata: `{"error":"invalid store ID"}`,
+		},
+		{
+			desc:  "not found",
+			store: &model.Store{ID: 1, Name: "Test1"},
+			id:    "1",
+			input: `{"name": "Test1"}`,
+			err:   service.ErrNotFound,
+			rcode: http.StatusNotFound,
+			rdata: `{"error":"store not found"}`,
+		},
+		{
+			desc:  "internal error",
+			store: &model.Store{ID: 1, Name: "Test1"},
+			err:   errTest,
+			id:    "1",
+			input: `{"name": "Test1"}`,
+			rcode: http.StatusInternalServerError,
+			rdata: `{"error":"internal error"}`,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			svc := service.NewMockService(ctrl)
+			if tC.err != errSkip {
+				svc.EXPECT().UpdateStore(gomock.Any(), tC.store).Return(tC.err)
+			}
+
+			router := setupTestRouter(svc)
+			rec, r := newTestParametersWithAuth(http.MethodPut, fmt.Sprintf("/v1/stores/%s", tC.id), tC.input)
+
+			router.ServeHTTP(rec, r)
+
+			body, _ := ioutil.ReadAll(rec.Result().Body)
+
+			assert.Equal(t, tC.rcode, rec.Result().StatusCode)
+			assert.JSONEq(t, tC.rdata, string(body))
+		})
+	}
+}
+
+func Test_deleteStoreHandler(t *testing.T) {
+	testCases := []struct {
+		desc  string
+		id    string
+		err   error
+		rcode int
+		rdata string
+	}{
+		{
+			desc:  "success",
+			id:    "1",
+			err:   nil,
+			rcode: http.StatusNoContent,
+			rdata: "",
+		},
+		{
+			desc:  "invalid store ID",
+			id:    "test",
+			err:   errSkip,
+			rcode: http.StatusBadRequest,
+			rdata: `{"error":"invalid store ID"}`,
+		},
+		{
+			desc:  "not found",
+			id:    "1",
+			err:   service.ErrNotFound,
+			rcode: http.StatusNotFound,
+			rdata: `{"error":"store not found"}`,
+		},
+		{
+			desc:  "internal error",
+			id:    "1",
+			err:   errTest,
+			rcode: http.StatusInternalServerError,
+			rdata: `{"error":"internal error"}`,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			svc := service.NewMockService(ctrl)
+			if tC.err != errSkip {
+				svc.EXPECT().DeleteStore(gomock.Any(), int64(1)).Return(tC.err)
+			}
+
+			router := setupTestRouter(svc)
+			rec, r := newTestParametersWithAuth(http.MethodDelete, fmt.Sprintf("/v1/stores/%s", tC.id), "")
+
+			router.ServeHTTP(rec, r)
+
+			body, _ := ioutil.ReadAll(rec.Result().Body)
+
+			assert.Equal(t, tC.rcode, rec.Result().StatusCode)
+			if tC.rdata == "" {
+				assert.Empty(t, string(body))
+			} else {
+				assert.JSONEq(t, tC.rdata, string(body))
+			}
+		})
+	}
+}
+
 func Test_getStoreItemsHandler(t *testing.T) {
 	testCases := []struct {
 		desc    string

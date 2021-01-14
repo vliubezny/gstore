@@ -41,6 +41,26 @@ type store struct {
 	Name string `json:"name"`
 }
 
+func newStore(s *model.Store) store {
+	return store{
+		ID:   s.ID,
+		Name: s.Name,
+	}
+}
+
+func (s store) toModel() *model.Store {
+	return &model.Store{
+		ID:   s.ID,
+		Name: s.Name,
+	}
+}
+
+func (s store) Validate() error {
+	return validation.ValidateStruct(&s,
+		validation.Field(&s.Name, validation.Required, validation.Length(2, 80)),
+	)
+}
+
 type item struct {
 	ID          int64  `json:"id"`
 	StoreID     int64  `json:"storeId"`

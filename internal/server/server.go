@@ -35,6 +35,11 @@ func SetupRouter(s service.Service, r chi.Router, a auth.Authenticator) {
 	r.Delete("/v1/categories/{id}", srv.deleteCategoryHandler)
 
 	r.Get("/v1/stores", srv.getStoresHandler)
+	r.Post("/v1/stores", srv.createStoreHandler)
+	r.Get("/v1/stores/{id}", srv.getStoreHandler)
+	r.Put("/v1/stores/{id}", srv.updateStoreHandler)
+	r.Delete("/v1/stores/{id}", srv.deleteStoreHandler)
+
 	r.Get("/v1/stores/{id}/items", srv.getStoreItemsHandler)
 }
 
