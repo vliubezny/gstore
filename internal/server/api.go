@@ -1,7 +1,6 @@
 package server
 
 import (
-	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/vliubezny/gstore/internal/model"
 )
 
@@ -13,7 +12,7 @@ type errorResponse struct {
 // category represents category object.
 type category struct {
 	ID   int64  `json:"id"`
-	Name string `json:"name"`
+	Name string `json:"name" validate:"required,gte=2,lte=80"`
 }
 
 func fromCategoryModel(c model.Category) category {
@@ -30,18 +29,12 @@ func (c category) toModel() model.Category {
 	}
 }
 
-func (c category) Validate() error {
-	return validation.ValidateStruct(&c,
-		validation.Field(&c.Name, validation.Required, validation.Length(2, 80)),
-	)
-}
-
 type store struct {
 	ID   int64  `json:"id"`
-	Name string `json:"name"`
+	Name string `json:"name" validate:"required,gte=2,lte=80"`
 }
 
-func newStore(s *model.Store) store {
+func fromStoreModel(s *model.Store) store {
 	return store{
 		ID:   s.ID,
 		Name: s.Name,
@@ -53,12 +46,6 @@ func (s store) toModel() *model.Store {
 		ID:   s.ID,
 		Name: s.Name,
 	}
-}
-
-func (s store) Validate() error {
-	return validation.ValidateStruct(&s,
-		validation.Field(&s.Name, validation.Required, validation.Length(2, 80)),
-	)
 }
 
 type item struct {

@@ -61,7 +61,7 @@ func (s *server) createCategoryHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := req.Validate(); err != nil {
+	if err := validate(&req); err != nil {
 		writeError(l.WithError(err), w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -91,7 +91,7 @@ func (s *server) updateCategoryHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := req.Validate(); err != nil {
+	if err := validate(&req); err != nil {
 		writeError(l.WithError(err), w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -178,7 +178,7 @@ func (s *server) getStoreHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeOK(l, w, newStore(str))
+	writeOK(l, w, fromStoreModel(str))
 }
 
 func (s *server) createStoreHandler(w http.ResponseWriter, r *http.Request) {
@@ -190,7 +190,7 @@ func (s *server) createStoreHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := req.Validate(); err != nil {
+	if err := validate(&req); err != nil {
 		writeError(l.WithError(err), w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -201,7 +201,7 @@ func (s *server) createStoreHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeOK(l, w, newStore(str))
+	writeOK(l, w, fromStoreModel(str))
 }
 
 func (s *server) updateStoreHandler(w http.ResponseWriter, r *http.Request) {
@@ -220,7 +220,7 @@ func (s *server) updateStoreHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := req.Validate(); err != nil {
+	if err := validate(&req); err != nil {
 		writeError(l.WithError(err), w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -238,7 +238,7 @@ func (s *server) updateStoreHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeOK(l, w, newStore(str))
+	writeOK(l, w, fromStoreModel(str))
 }
 
 func (s *server) deleteStoreHandler(w http.ResponseWriter, r *http.Request) {

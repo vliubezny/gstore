@@ -154,7 +154,7 @@ func Test_createCategoryHandler(t *testing.T) {
 			input:    `{}`,
 			err:      errSkip,
 			rcode:    http.StatusBadRequest,
-			rdata:    `{"error":"name: cannot be blank."}`,
+			rdata:    `{"error":"name is a required field"}`,
 		},
 		{
 			desc:     "internal error",
@@ -217,7 +217,7 @@ func Test_updateCategoryHandler(t *testing.T) {
 			input:    `{}`,
 			err:      errSkip,
 			rcode:    http.StatusBadRequest,
-			rdata:    `{"error":"name: cannot be blank."}`,
+			rdata:    `{"error":"name is a required field"}`,
 		},
 		{
 			desc:     "invalid category ID",
@@ -469,7 +469,7 @@ func Test_createStoreHandler(t *testing.T) {
 			input: `{}`,
 			err:   errSkip,
 			rcode: http.StatusBadRequest,
-			rdata: `{"error":"name: cannot be blank."}`,
+			rdata: `{"error":"name is a required field"}`,
 		},
 		{
 			desc:  "internal error",
@@ -532,7 +532,7 @@ func Test_updateStoreHandler(t *testing.T) {
 			input: `{}`,
 			err:   errSkip,
 			rcode: http.StatusBadRequest,
-			rdata: `{"error":"name: cannot be blank."}`,
+			rdata: `{"error":"name is a required field"}`,
 		},
 		{
 			desc:  "invalid store ID",
