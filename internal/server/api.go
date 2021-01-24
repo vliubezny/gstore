@@ -48,10 +48,9 @@ func (s store) toModel() *model.Store {
 	}
 }
 
-type item struct {
+type product struct {
 	ID          int64  `json:"id"`
-	StoreID     int64  `json:"storeId"`
+	CategoryID  int64  `json:"categoryId"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
-	Price       int64  `json:"price"`
 }

@@ -649,50 +649,50 @@ func Test_deleteStoreHandler(t *testing.T) {
 	}
 }
 
-func Test_getStoreItemsHandler(t *testing.T) {
+func Test_getCategoryProductsHandler(t *testing.T) {
 	testCases := []struct {
-		desc    string
-		storeID string
-		items   []*model.Item
-		err     error
-		rcode   int
-		rdata   string
+		desc       string
+		categoryID string
+		products   []*model.Product
+		err        error
+		rcode      int
+		rdata      string
 	}{
 		{
-			desc:    "success",
-			storeID: "1",
-			items: []*model.Item{
-				{ID: 1, StoreID: 1, Name: "Test1", Description: "Desc 1", Price: 1000},
-				{ID: 2, StoreID: 1, Name: "Test2", Description: "Desc 2", Price: 2000},
+			desc:       "success",
+			categoryID: "1",
+			products: []*model.Product{
+				{ID: 1, CategoryID: 1, Name: "Test1", Description: "Desc 1"},
+				{ID: 2, CategoryID: 1, Name: "Test2", Description: "Desc 2"},
 			},
 			err:   nil,
 			rcode: http.StatusOK,
-			rdata: `[{"id":1, "storeId":1, "name":"Test1", "description":"Desc 1", "price":1000},
-				{"id":2, "storeId":1, "name":"Test2", "description":"Desc 2", "price":2000}]`,
+			rdata: `[{"id":1, "categoryId":1, "name":"Test1", "description":"Desc 1"},
+				{"id":2, "categoryId":1, "name":"Test2", "description":"Desc 2"}]`,
 		},
 		{
-			desc:    "internal error",
-			storeID: "1",
-			items:   nil,
-			err:     errTest,
-			rcode:   http.StatusInternalServerError,
-			rdata:   `{"error":"internal error"}`,
+			desc:       "internal error",
+			categoryID: "1",
+			products:   nil,
+			err:        errTest,
+			rcode:      http.StatusInternalServerError,
+			rdata:      `{"error":"internal error"}`,
 		},
 		{
-			desc:    "empty store ID",
-			storeID: "",
-			items:   []*model.Item{},
-			err:     errSkip,
-			rcode:   http.StatusBadRequest,
-			rdata:   `{"error":"invalid store ID"}`,
+			desc:       "empty store ID",
+			categoryID: "",
+			products:   []*model.Product{},
+			err:        errSkip,
+			rcode:      http.StatusBadRequest,
+			rdata:      `{"error":"invalid category ID"}`,
 		},
 		{
-			desc:    "invalid store ID",
-			storeID: "test",
-			items:   []*model.Item{},
-			err:     errSkip,
-			rcode:   http.StatusBadRequest,
-			rdata:   `{"error":"invalid store ID"}`,
+			desc:       "invalid store ID",
+			categoryID: "test",
+			products:   []*model.Product{},
+			err:        errSkip,
+			rcode:      http.StatusBadRequest,
+			rdata:      `{"error":"invalid category ID"}`,
 		},
 	}
 	for _, tC := range testCases {
@@ -702,11 +702,11 @@ func Test_getStoreItemsHandler(t *testing.T) {
 
 			svc := service.NewMockService(ctrl)
 			if tC.err != errSkip {
-				svc.EXPECT().GetStoreItems(gomock.Any(), int64(1)).Return(tC.items, tC.err)
+				svc.EXPECT().GetProducts(gomock.Any(), int64(1)).Return(tC.products, tC.err)
 			}
 
 			router := setupTestRouter(svc)
-			rec, r := newTestParameters(http.MethodGet, fmt.Sprintf("/v1/stores/%s/items", tC.storeID), "")
+			rec, r := newTestParameters(http.MethodGet, fmt.Sprintf("/v1/categories/%s/products", tC.categoryID), "")
 
 			router.ServeHTTP(rec, r)
 

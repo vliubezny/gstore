@@ -32,7 +32,7 @@ func SetupRouter(s service.Service, r chi.Router, username, password string) {
 	r.Get("/v1/stores", srv.getStoresHandler)
 	r.Get("/v1/stores/{id}", srv.getStoreHandler)
 
-	r.Get("/v1/stores/{id}/items", srv.getStoreItemsHandler)
+	r.Get("/v1/categories/{id}/products", srv.getCategoryProductsHandler)
 
 	r.Group(func(r chi.Router) {
 		r.Use(basicAuthMiddleware(username, password))

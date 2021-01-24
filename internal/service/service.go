@@ -27,7 +27,7 @@ type Service interface {
 	// CreateCategory creates new category.
 	CreateCategory(ctx context.Context, category model.Category) (model.Category, error)
 
-	// UpdateCategory updates new category.
+	// UpdateCategory updates category.
 	UpdateCategory(ctx context.Context, category model.Category) error
 
 	// DeleteCategory deletes category from storage.
@@ -42,26 +42,26 @@ type Service interface {
 	// CreateStore creates new store.
 	CreateStore(ctx context.Context, store *model.Store) error
 
-	// UpdateStore updates new store.
+	// UpdateStore updates store.
 	UpdateStore(ctx context.Context, store *model.Store) error
 
 	// DeleteStore deletes store from storage.
 	DeleteStore(ctx context.Context, storeID int64) error
 
-	// GetStoreItems returns slice of store items.
-	GetStoreItems(ctx context.Context, storeID int64) ([]*model.Item, error)
+	// GetProducts returns slice of products in category.
+	GetProducts(ctx context.Context, categoryID int64) ([]*model.Product, error)
 
-	// GetStoreItem returns a store item by ID.
-	GetStoreItem(ctx context.Context, itemID int64) (*model.Item, error)
+	// GetProduct returns a product by ID.
+	GetProduct(ctx context.Context, productID int64) (*model.Product, error)
 
-	// CreateStoreItem creates new store item.
-	CreateStoreItem(ctx context.Context, item *model.Item) error
+	// CreateProduct creates new product.
+	CreateProduct(ctx context.Context, product *model.Product) error
 
-	// UpdateStoreItem updates new store item.
-	UpdateStoreItem(ctx context.Context, item *model.Item) error
+	// UpdateProduct updates product.
+	UpdateProduct(ctx context.Context, product *model.Product) error
 
-	// DeleteStoreItem deletes store item from storage.
-	DeleteStoreItem(ctx context.Context, itemID int64) error
+	// DeleteProduct deletes product.
+	DeleteProduct(ctx context.Context, productID int64) error
 }
 
 type service struct {
@@ -168,48 +168,48 @@ func (s *service) DeleteStore(ctx context.Context, storeID int64) error {
 	return nil
 }
 
-func (s *service) GetStoreItems(ctx context.Context, storeID int64) ([]*model.Item, error) {
-	stores, err := s.s.GetStoreItems(ctx, storeID)
+func (s *service) GetProducts(ctx context.Context, categoryID int64) ([]*model.Product, error) {
+	stores, err := s.s.GetProducts(ctx, categoryID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get store items: %w", err)
+		return nil, fmt.Errorf("failed to get products: %w", err)
 	}
 	return stores, nil
 }
 
-func (s *service) GetStoreItem(ctx context.Context, itemID int64) (*model.Item, error) {
-	item, err := s.s.GetStoreItem(ctx, itemID)
+func (s *service) GetProduct(ctx context.Context, productID int64) (*model.Product, error) {
+	item, err := s.s.GetProduct(ctx, productID)
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
 			return nil, ErrNotFound
 		}
-		return nil, fmt.Errorf("failed to get store item: %w", err)
+		return nil, fmt.Errorf("failed to get product: %w", err)
 	}
 	return item, nil
 }
 
-func (s *service) CreateStoreItem(ctx context.Context, item *model.Item) error {
-	if err := s.s.CreateStoreItem(ctx, item); err != nil {
-		return fmt.Errorf("failed to create store item: %w", err)
+func (s *service) CreateProduct(ctx context.Context, product *model.Product) error {
+	if err := s.s.CreateProduct(ctx, product); err != nil {
+		return fmt.Errorf("failed to create product: %w", err)
 	}
 	return nil
 }
 
-func (s *service) UpdateStoreItem(ctx context.Context, item *model.Item) error {
-	if err := s.s.UpdateStoreItem(ctx, item); err != nil {
+func (s *service) UpdateProduct(ctx context.Context, product *model.Product) error {
+	if err := s.s.UpdateProduct(ctx, product); err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
 			return ErrNotFound
 		}
-		return fmt.Errorf("failed to update store item: %w", err)
+		return fmt.Errorf("failed to update product: %w", err)
 	}
 	return nil
 }
 
-func (s *service) DeleteStoreItem(ctx context.Context, itemID int64) error {
-	if err := s.s.DeleteStoreItem(ctx, itemID); err != nil {
+func (s *service) DeleteProduct(ctx context.Context, productID int64) error {
+	if err := s.s.DeleteProduct(ctx, productID); err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
 			return ErrNotFound
 		}
-		return fmt.Errorf("failed to delete store item: %w", err)
+		return fmt.Errorf("failed to delete product: %w", err)
 	}
 	return nil
 }

@@ -25,7 +25,7 @@ type Storage interface {
 	// CreateCategory creates new category.
 	CreateCategory(ctx context.Context, category model.Category) (model.Category, error)
 
-	// UpdateCategory updates new category.
+	// UpdateCategory updates category.
 	UpdateCategory(ctx context.Context, category model.Category) error
 
 	// DeleteCategory deletes category from storage.
@@ -40,24 +40,24 @@ type Storage interface {
 	// CreateStore creates new store.
 	CreateStore(ctx context.Context, store *model.Store) error
 
-	// UpdateStore updates new store.
+	// UpdateStore updates store.
 	UpdateStore(ctx context.Context, store *model.Store) error
 
 	// DeleteStore deletes store from storage.
 	DeleteStore(ctx context.Context, storeID int64) error
 
-	// GetStoreItems returns slice of store items.
-	GetStoreItems(ctx context.Context, storeID int64) ([]*model.Item, error)
+	// GetProducts returns slice of products in category.
+	GetProducts(ctx context.Context, categoryID int64) ([]*model.Product, error)
 
-	// GetStoreItem returns a store item by ID.
-	GetStoreItem(ctx context.Context, itemID int64) (*model.Item, error)
+	// GetProduct returns a product by ID.
+	GetProduct(ctx context.Context, productID int64) (*model.Product, error)
 
-	// CreateStoreItem creates new store item.
-	CreateStoreItem(ctx context.Context, item *model.Item) error
+	// CreateProduct creates new product.
+	CreateProduct(ctx context.Context, product *model.Product) error
 
-	// UpdateStoreItem updates new store item.
-	UpdateStoreItem(ctx context.Context, item *model.Item) error
+	// UpdateProduct updates product.
+	UpdateProduct(ctx context.Context, product *model.Product) error
 
-	// DeleteStoreItem deletes store item from storage.
-	DeleteStoreItem(ctx context.Context, itemID int64) error
+	// DeleteProduct deletes product.
+	DeleteProduct(ctx context.Context, productID int64) error
 }

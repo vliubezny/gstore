@@ -26,20 +26,18 @@ func (s store) toModel() *model.Store {
 	}
 }
 
-type item struct {
+type product struct {
 	ID          int64  `db:"id"`
-	StoreID     int64  `db:"store_id"`
+	CategoryID  int64  `db:"category_id"`
 	Name        string `db:"name"`
 	Description string `db:"description"`
-	Price       int64  `db:"price"`
 }
 
-func (i item) toModel() *model.Item {
-	return &model.Item{
+func (i product) toModel() *model.Product {
+	return &model.Product{
 		ID:          i.ID,
-		StoreID:     i.StoreID,
+		CategoryID:  i.CategoryID,
 		Name:        i.Name,
 		Description: i.Description,
-		Price:       i.Price,
 	}
 }

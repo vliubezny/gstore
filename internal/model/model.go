@@ -1,5 +1,7 @@
 package model
 
+import "github.com/shopspring/decimal"
+
 // Category represents product cetegory.
 type Category struct {
 	ID   int64
@@ -12,11 +14,17 @@ type Store struct {
 	Name string
 }
 
-// Item represents product item.
-type Item struct {
+// Product represents product item.
+type Product struct {
 	ID          int64
-	StoreID     int64
+	CategoryID  int64
 	Name        string
 	Description string
-	Price       int64
+}
+
+// Position represents store prosition.
+type Position struct {
+	ProductID int64
+	StoreID   int64
+	Price     decimal.Decimal
 }

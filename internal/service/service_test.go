@@ -435,32 +435,32 @@ func TestService_DeleteStore(t *testing.T) {
 	}
 }
 
-func TestService_GetStoreItems(t *testing.T) {
-	testItems := []*model.Item{
-		{ID: 1, StoreID: 1, Name: "AAA", Description: "D-AAA", Price: 1000},
-		{ID: 2, StoreID: 1, Name: "BBB", Description: "D-BBB", Price: 2000},
+func TestService_GetProducts(t *testing.T) {
+	testProducts := []*model.Product{
+		{ID: 1, CategoryID: 1, Name: "AAA", Description: "D-AAA"},
+		{ID: 2, CategoryID: 1, Name: "BBB", Description: "D-BBB"},
 	}
 
 	testCases := []struct {
-		desc   string
-		rItems []*model.Item
-		rErr   error
-		items  []*model.Item
-		err    error
+		desc      string
+		rProducts []*model.Product
+		rErr      error
+		products  []*model.Product
+		err       error
 	}{
 		{
-			desc:   "success",
-			rItems: testItems,
-			rErr:   nil,
-			items:  testItems,
-			err:    nil,
+			desc:      "success",
+			rProducts: testProducts,
+			rErr:      nil,
+			products:  testProducts,
+			err:       nil,
 		},
 		{
-			desc:   "unexpected error",
-			rItems: nil,
-			rErr:   errTest,
-			items:  nil,
-			err:    errTest,
+			desc:      "unexpected error",
+			rProducts: nil,
+			rErr:      errTest,
+			products:  nil,
+			err:       errTest,
 		},
 	}
 	for _, tC := range testCases {
@@ -469,45 +469,45 @@ func TestService_GetStoreItems(t *testing.T) {
 			defer ctrl.Finish()
 
 			st := storage.NewMockStorage(ctrl)
-			st.EXPECT().GetStoreItems(ctx, int64(1)).Return(tC.rItems, tC.rErr)
+			st.EXPECT().GetProducts(ctx, int64(1)).Return(tC.rProducts, tC.rErr)
 
 			s := New(st)
 
-			stores, err := s.GetStoreItems(ctx, 1)
+			stores, err := s.GetProducts(ctx, 1)
 			assert.True(t, errors.Is(err, tC.err), fmt.Sprintf("wanted %s got %s", tC.err, err))
-			assert.Equal(t, tC.items, stores)
+			assert.Equal(t, tC.products, stores)
 		})
 	}
 }
 
-func TestService_GetStoreItem(t *testing.T) {
+func TestService_GetProduct(t *testing.T) {
 	testCases := []struct {
-		desc  string
-		rItem *model.Item
-		rErr  error
-		item  *model.Item
-		err   error
+		desc     string
+		rProduct *model.Product
+		rErr     error
+		product  *model.Product
+		err      error
 	}{
 		{
-			desc:  "success",
-			rItem: &model.Item{ID: 1, StoreID: 1, Name: "Test1", Description: "1 test", Price: 100},
-			rErr:  nil,
-			item:  &model.Item{ID: 1, StoreID: 1, Name: "Test1", Description: "1 test", Price: 100},
-			err:   nil,
+			desc:     "success",
+			rProduct: &model.Product{ID: 1, CategoryID: 1, Name: "Test1", Description: "1 test"},
+			rErr:     nil,
+			product:  &model.Product{ID: 1, CategoryID: 1, Name: "Test1", Description: "1 test"},
+			err:      nil,
 		},
 		{
-			desc:  "ErrNotFound",
-			rItem: nil,
-			rErr:  storage.ErrNotFound,
-			item:  nil,
-			err:   ErrNotFound,
+			desc:     "ErrNotFound",
+			rProduct: nil,
+			rErr:     storage.ErrNotFound,
+			product:  nil,
+			err:      ErrNotFound,
 		},
 		{
-			desc:  "unexpected error",
-			rItem: nil,
-			rErr:  errTest,
-			item:  nil,
-			err:   errTest,
+			desc:     "unexpected error",
+			rProduct: nil,
+			rErr:     errTest,
+			product:  nil,
+			err:      errTest,
 		},
 	}
 	for _, tC := range testCases {
@@ -518,35 +518,35 @@ func TestService_GetStoreItem(t *testing.T) {
 			id := int64(1)
 
 			st := storage.NewMockStorage(ctrl)
-			st.EXPECT().GetStoreItem(ctx, id).Return(tC.rItem, tC.rErr)
+			st.EXPECT().GetProduct(ctx, id).Return(tC.rProduct, tC.rErr)
 
 			s := New(st)
 
-			item, err := s.GetStoreItem(ctx, id)
+			product, err := s.GetProduct(ctx, id)
 			assert.True(t, errors.Is(err, tC.err), fmt.Sprintf("wanted %s got %s", tC.err, err))
-			assert.Equal(t, tC.item, item)
+			assert.Equal(t, tC.product, product)
 		})
 	}
 }
 
-func TestService_CreateStoreItem(t *testing.T) {
+func TestService_CreateProduct(t *testing.T) {
 	testCases := []struct {
-		desc string
-		rErr error
-		item *model.Item
-		err  error
+		desc    string
+		rErr    error
+		product *model.Product
+		err     error
 	}{
 		{
-			desc: "success",
-			rErr: nil,
-			item: &model.Item{ID: 1, StoreID: 1, Name: "Test1", Description: "1 test", Price: 100},
-			err:  nil,
+			desc:    "success",
+			rErr:    nil,
+			product: &model.Product{ID: 1, CategoryID: 1, Name: "Test1", Description: "1 test"},
+			err:     nil,
 		},
 		{
-			desc: "unexpected error",
-			rErr: errTest,
-			item: &model.Item{ID: 1, StoreID: 1, Name: "Test1", Description: "1 test", Price: 100},
-			err:  errTest,
+			desc:    "unexpected error",
+			rErr:    errTest,
+			product: &model.Product{ID: 1, CategoryID: 1, Name: "Test1", Description: "1 test"},
+			err:     errTest,
 		},
 	}
 	for _, tC := range testCases {
@@ -555,40 +555,40 @@ func TestService_CreateStoreItem(t *testing.T) {
 			defer ctrl.Finish()
 
 			st := storage.NewMockStorage(ctrl)
-			st.EXPECT().CreateStoreItem(ctx, tC.item).Return(tC.rErr)
+			st.EXPECT().CreateProduct(ctx, tC.product).Return(tC.rErr)
 
 			s := New(st)
 
-			err := s.CreateStoreItem(ctx, tC.item)
+			err := s.CreateProduct(ctx, tC.product)
 			assert.True(t, errors.Is(err, tC.err), fmt.Sprintf("wanted %s got %s", tC.err, err))
 		})
 	}
 }
 
-func TestService_UpdateStoreItem(t *testing.T) {
+func TestService_UpdateProduct(t *testing.T) {
 	testCases := []struct {
-		desc string
-		rErr error
-		item *model.Item
-		err  error
+		desc    string
+		rErr    error
+		product *model.Product
+		err     error
 	}{
 		{
-			desc: "success",
-			rErr: nil,
-			item: &model.Item{ID: 1, StoreID: 1, Name: "Test1", Description: "1 test", Price: 100},
-			err:  nil,
+			desc:    "success",
+			rErr:    nil,
+			product: &model.Product{ID: 1, CategoryID: 1, Name: "Test1", Description: "1 test"},
+			err:     nil,
 		},
 		{
-			desc: "ErrNotFound",
-			rErr: storage.ErrNotFound,
-			item: &model.Item{ID: 1, StoreID: 1, Name: "Test1", Description: "1 test", Price: 100},
-			err:  ErrNotFound,
+			desc:    "ErrNotFound",
+			rErr:    storage.ErrNotFound,
+			product: &model.Product{ID: 1, CategoryID: 1, Name: "Test1", Description: "1 test"},
+			err:     ErrNotFound,
 		},
 		{
-			desc: "unexpected error",
-			rErr: errTest,
-			item: &model.Item{ID: 1, StoreID: 1, Name: "Test1", Description: "1 test", Price: 100},
-			err:  errTest,
+			desc:    "unexpected error",
+			rErr:    errTest,
+			product: &model.Product{ID: 1, CategoryID: 1, Name: "Test1", Description: "1 test"},
+			err:     errTest,
 		},
 	}
 	for _, tC := range testCases {
@@ -597,17 +597,17 @@ func TestService_UpdateStoreItem(t *testing.T) {
 			defer ctrl.Finish()
 
 			st := storage.NewMockStorage(ctrl)
-			st.EXPECT().UpdateStoreItem(ctx, tC.item).Return(tC.rErr)
+			st.EXPECT().UpdateProduct(ctx, tC.product).Return(tC.rErr)
 
 			s := New(st)
 
-			err := s.UpdateStoreItem(ctx, tC.item)
+			err := s.UpdateProduct(ctx, tC.product)
 			assert.True(t, errors.Is(err, tC.err), fmt.Sprintf("wanted %s got %s", tC.err, err))
 		})
 	}
 }
 
-func TestService_DeleteStoreItem(t *testing.T) {
+func TestService_DeleteProduct(t *testing.T) {
 	testCases := []struct {
 		desc string
 		rErr error
@@ -637,11 +637,11 @@ func TestService_DeleteStoreItem(t *testing.T) {
 			id := int64(1)
 
 			st := storage.NewMockStorage(ctrl)
-			st.EXPECT().DeleteStoreItem(ctx, id).Return(tC.rErr)
+			st.EXPECT().DeleteProduct(ctx, id).Return(tC.rErr)
 
 			s := New(st)
 
-			err := s.DeleteStoreItem(ctx, id)
+			err := s.DeleteProduct(ctx, id)
 			assert.True(t, errors.Is(err, tC.err), fmt.Sprintf("wanted %s got %s", tC.err, err))
 		})
 	}

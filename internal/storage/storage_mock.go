@@ -179,74 +179,74 @@ func (mr *MockStorageMockRecorder) DeleteStore(ctx, storeID interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteStore", reflect.TypeOf((*MockStorage)(nil).DeleteStore), ctx, storeID)
 }
 
-// GetStoreItems mocks base method
-func (m *MockStorage) GetStoreItems(ctx context.Context, storeID int64) ([]*model.Item, error) {
+// GetProducts mocks base method
+func (m *MockStorage) GetProducts(ctx context.Context, categoryID int64) ([]*model.Product, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetStoreItems", ctx, storeID)
-	ret0, _ := ret[0].([]*model.Item)
+	ret := m.ctrl.Call(m, "GetProducts", ctx, categoryID)
+	ret0, _ := ret[0].([]*model.Product)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetStoreItems indicates an expected call of GetStoreItems
-func (mr *MockStorageMockRecorder) GetStoreItems(ctx, storeID interface{}) *gomock.Call {
+// GetProducts indicates an expected call of GetProducts
+func (mr *MockStorageMockRecorder) GetProducts(ctx, categoryID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStoreItems", reflect.TypeOf((*MockStorage)(nil).GetStoreItems), ctx, storeID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProducts", reflect.TypeOf((*MockStorage)(nil).GetProducts), ctx, categoryID)
 }
 
-// GetStoreItem mocks base method
-func (m *MockStorage) GetStoreItem(ctx context.Context, itemID int64) (*model.Item, error) {
+// GetProduct mocks base method
+func (m *MockStorage) GetProduct(ctx context.Context, productID int64) (*model.Product, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetStoreItem", ctx, itemID)
-	ret0, _ := ret[0].(*model.Item)
+	ret := m.ctrl.Call(m, "GetProduct", ctx, productID)
+	ret0, _ := ret[0].(*model.Product)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetStoreItem indicates an expected call of GetStoreItem
-func (mr *MockStorageMockRecorder) GetStoreItem(ctx, itemID interface{}) *gomock.Call {
+// GetProduct indicates an expected call of GetProduct
+func (mr *MockStorageMockRecorder) GetProduct(ctx, productID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStoreItem", reflect.TypeOf((*MockStorage)(nil).GetStoreItem), ctx, itemID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProduct", reflect.TypeOf((*MockStorage)(nil).GetProduct), ctx, productID)
 }
 
-// CreateStoreItem mocks base method
-func (m *MockStorage) CreateStoreItem(ctx context.Context, item *model.Item) error {
+// CreateProduct mocks base method
+func (m *MockStorage) CreateProduct(ctx context.Context, product *model.Product) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateStoreItem", ctx, item)
+	ret := m.ctrl.Call(m, "CreateProduct", ctx, product)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// CreateStoreItem indicates an expected call of CreateStoreItem
-func (mr *MockStorageMockRecorder) CreateStoreItem(ctx, item interface{}) *gomock.Call {
+// CreateProduct indicates an expected call of CreateProduct
+func (mr *MockStorageMockRecorder) CreateProduct(ctx, product interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateStoreItem", reflect.TypeOf((*MockStorage)(nil).CreateStoreItem), ctx, item)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateProduct", reflect.TypeOf((*MockStorage)(nil).CreateProduct), ctx, product)
 }
 
-// UpdateStoreItem mocks base method
-func (m *MockStorage) UpdateStoreItem(ctx context.Context, item *model.Item) error {
+// UpdateProduct mocks base method
+func (m *MockStorage) UpdateProduct(ctx context.Context, product *model.Product) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateStoreItem", ctx, item)
+	ret := m.ctrl.Call(m, "UpdateProduct", ctx, product)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpdateStoreItem indicates an expected call of UpdateStoreItem
-func (mr *MockStorageMockRecorder) UpdateStoreItem(ctx, item interface{}) *gomock.Call {
+// UpdateProduct indicates an expected call of UpdateProduct
+func (mr *MockStorageMockRecorder) UpdateProduct(ctx, product interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStoreItem", reflect.TypeOf((*MockStorage)(nil).UpdateStoreItem), ctx, item)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateProduct", reflect.TypeOf((*MockStorage)(nil).UpdateProduct), ctx, product)
 }
 
-// DeleteStoreItem mocks base method
-func (m *MockStorage) DeleteStoreItem(ctx context.Context, itemID int64) error {
+// DeleteProduct mocks base method
+func (m *MockStorage) DeleteProduct(ctx context.Context, productID int64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteStoreItem", ctx, itemID)
+	ret := m.ctrl.Call(m, "DeleteProduct", ctx, productID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// DeleteStoreItem indicates an expected call of DeleteStoreItem
-func (mr *MockStorageMockRecorder) DeleteStoreItem(ctx, itemID interface{}) *gomock.Call {
+// DeleteProduct indicates an expected call of DeleteProduct
+func (mr *MockStorageMockRecorder) DeleteProduct(ctx, productID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteStoreItem", reflect.TypeOf((*MockStorage)(nil).DeleteStoreItem), ctx, itemID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteProduct", reflect.TypeOf((*MockStorage)(nil).DeleteProduct), ctx, productID)
 }

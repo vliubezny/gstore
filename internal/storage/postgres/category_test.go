@@ -90,7 +90,7 @@ func TestPg_UpdateCategory_ErrNotFound(t *testing.T) {
 }
 
 func TestPg_DeleteCategory(t *testing.T) {
-	var id int64 = 1
+	var id int64 = 5
 
 	err := s.DeleteCategory(ctx, id)
 	require.NoError(t, err)

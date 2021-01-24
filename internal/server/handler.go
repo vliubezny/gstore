@@ -265,31 +265,30 @@ func (s *server) deleteStoreHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (s *server) getStoreItemsHandler(w http.ResponseWriter, r *http.Request) {
+func (s *server) getCategoryProductsHandler(w http.ResponseWriter, r *http.Request) {
 	l := getLogger(r)
 
-	sid := chi.URLParam(r, "id")
-	storeID, err := strconv.ParseInt(sid, 10, 64)
+	id := chi.URLParam(r, "id")
+	categoryID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		writeError(l.WithError(err), w, http.StatusBadRequest, "invalid store ID")
+		writeError(l.WithError(err), w, http.StatusBadRequest, "invalid category ID")
 		return
 	}
 
-	items, err := s.s.GetStoreItems(r.Context(), storeID)
+	products, err := s.s.GetProducts(r.Context(), categoryID)
 	if err != nil {
-		writeInternalError(l.WithError(err), w, "fail to get items")
+		writeInternalError(l.WithError(err), w, "fail to products")
 		return
 	}
 
-	resp := make([]*item, len(items))
+	resp := make([]*product, len(products))
 
-	for i, c := range items {
-		resp[i] = &item{
+	for i, c := range products {
+		resp[i] = &product{
 			ID:          c.ID,
-			StoreID:     c.StoreID,
+			CategoryID:  c.CategoryID,
 			Name:        c.Name,
 			Description: c.Description,
-			Price:       c.Price,
 		}
 	}
 
