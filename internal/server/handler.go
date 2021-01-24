@@ -22,7 +22,7 @@ func (s *server) getCategoriesHandler(w http.ResponseWriter, r *http.Request) {
 	resp := make([]category, len(categories))
 
 	for i, c := range categories {
-		resp[i] = newCategory(c)
+		resp[i] = fromCategoryModel(c)
 	}
 
 	writeOK(l, w, resp)
@@ -49,7 +49,7 @@ func (s *server) getCategoryHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeOK(l, w, newCategory(c))
+	writeOK(l, w, fromCategoryModel(c))
 }
 
 func (s *server) createCategoryHandler(w http.ResponseWriter, r *http.Request) {
@@ -66,13 +66,13 @@ func (s *server) createCategoryHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c := req.toModel()
-	if err := s.s.CreateCategory(r.Context(), c); err != nil {
+	c, err := s.s.CreateCategory(r.Context(), req.toModel())
+	if err != nil {
 		writeInternalError(l.WithError(err), w, "fail to create category")
 		return
 	}
 
-	writeOK(l, w, newCategory(c))
+	writeOK(l, w, fromCategoryModel(c))
 }
 
 func (s *server) updateCategoryHandler(w http.ResponseWriter, r *http.Request) {
@@ -109,7 +109,7 @@ func (s *server) updateCategoryHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeOK(l, w, newCategory(c))
+	writeOK(l, w, fromCategoryModel(c))
 }
 
 func (s *server) deleteCategoryHandler(w http.ResponseWriter, r *http.Request) {

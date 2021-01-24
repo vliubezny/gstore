@@ -16,15 +16,15 @@ type category struct {
 	Name string `json:"name"`
 }
 
-func newCategory(c *model.Category) category {
+func fromCategoryModel(c model.Category) category {
 	return category{
 		ID:   c.ID,
 		Name: c.Name,
 	}
 }
 
-func (c category) toModel() *model.Category {
-	return &model.Category{
+func (c category) toModel() model.Category {
+	return model.Category{
 		ID:   c.ID,
 		Name: c.Name,
 	}

@@ -22,14 +22,14 @@ var (
 func Test_getCategoriesHandler(t *testing.T) {
 	testCases := []struct {
 		desc       string
-		categories []*model.Category
+		categories []model.Category
 		err        error
 		rcode      int
 		rdata      string
 	}{
 		{
 			desc: "success",
-			categories: []*model.Category{
+			categories: []model.Category{
 				{ID: 1, Name: "Test1"},
 				{ID: 2, Name: "Test2"},
 			},
@@ -69,7 +69,7 @@ func Test_getCategoriesHandler(t *testing.T) {
 func Test_getCategoryHandler(t *testing.T) {
 	testCases := []struct {
 		desc     string
-		category *model.Category
+		category model.Category
 		id       string
 		err      error
 		rcode    int
@@ -77,7 +77,7 @@ func Test_getCategoryHandler(t *testing.T) {
 	}{
 		{
 			desc:     "success",
-			category: &model.Category{ID: 1, Name: "Test1"},
+			category: model.Category{ID: 1, Name: "Test1"},
 			id:       "1",
 			err:      nil,
 			rcode:    http.StatusOK,
@@ -86,7 +86,7 @@ func Test_getCategoryHandler(t *testing.T) {
 		{
 			desc:     "invalid category ID",
 			id:       "test",
-			category: nil,
+			category: model.Category{},
 			err:      errSkip,
 			rcode:    http.StatusBadRequest,
 			rdata:    `{"error":"invalid category ID"}`,
@@ -94,14 +94,14 @@ func Test_getCategoryHandler(t *testing.T) {
 		{
 			desc:     "not found",
 			id:       "1",
-			category: nil,
+			category: model.Category{},
 			err:      service.ErrNotFound,
 			rcode:    http.StatusNotFound,
 			rdata:    `{"error":"category not found"}`,
 		},
 		{
 			desc:     "internal error",
-			category: nil,
+			category: model.Category{},
 			id:       "1",
 			err:      errTest,
 			rcode:    http.StatusInternalServerError,
@@ -134,7 +134,7 @@ func Test_getCategoryHandler(t *testing.T) {
 func Test_createCategoryHandler(t *testing.T) {
 	testCases := []struct {
 		desc     string
-		category *model.Category
+		category model.Category
 		err      error
 		input    string
 		rcode    int
@@ -142,7 +142,7 @@ func Test_createCategoryHandler(t *testing.T) {
 	}{
 		{
 			desc:     "success",
-			category: &model.Category{Name: "Test1"},
+			category: model.Category{Name: "Test1"},
 			err:      nil,
 			input:    `{"name": "Test1"}`,
 			rcode:    http.StatusOK,
@@ -150,7 +150,7 @@ func Test_createCategoryHandler(t *testing.T) {
 		},
 		{
 			desc:     "invalid: missing name",
-			category: nil,
+			category: model.Category{},
 			input:    `{}`,
 			err:      errSkip,
 			rcode:    http.StatusBadRequest,
@@ -158,7 +158,7 @@ func Test_createCategoryHandler(t *testing.T) {
 		},
 		{
 			desc:     "internal error",
-			category: &model.Category{Name: "Test1"},
+			category: model.Category{Name: "Test1"},
 			err:      errTest,
 			input:    `{"name": "Test1"}`,
 			rcode:    http.StatusInternalServerError,
@@ -172,9 +172,9 @@ func Test_createCategoryHandler(t *testing.T) {
 
 			svc := service.NewMockService(ctrl)
 			if tC.err != errSkip {
-				svc.EXPECT().CreateCategory(gomock.Any(), tC.category).DoAndReturn(func(_ context.Context, c *model.Category) error {
+				svc.EXPECT().CreateCategory(gomock.Any(), tC.category).DoAndReturn(func(_ context.Context, c model.Category) (model.Category, error) {
 					c.ID = 1
-					return tC.err
+					return c, tC.err
 				})
 			}
 
@@ -194,7 +194,7 @@ func Test_createCategoryHandler(t *testing.T) {
 func Test_updateCategoryHandler(t *testing.T) {
 	testCases := []struct {
 		desc     string
-		category *model.Category
+		category model.Category
 		err      error
 		id       string
 		input    string
@@ -203,7 +203,7 @@ func Test_updateCategoryHandler(t *testing.T) {
 	}{
 		{
 			desc:     "success",
-			category: &model.Category{ID: 1, Name: "Test1"},
+			category: model.Category{ID: 1, Name: "Test1"},
 			err:      nil,
 			id:       "1",
 			input:    `{"name": "Test1"}`,
@@ -212,7 +212,7 @@ func Test_updateCategoryHandler(t *testing.T) {
 		},
 		{
 			desc:     "invalid: missing name",
-			category: nil,
+			category: model.Category{},
 			id:       "1",
 			input:    `{}`,
 			err:      errSkip,
@@ -221,7 +221,7 @@ func Test_updateCategoryHandler(t *testing.T) {
 		},
 		{
 			desc:     "invalid category ID",
-			category: nil,
+			category: model.Category{},
 			id:       "test",
 			input:    `{"name": "Test1"}`,
 			err:      errSkip,
@@ -230,7 +230,7 @@ func Test_updateCategoryHandler(t *testing.T) {
 		},
 		{
 			desc:     "not found",
-			category: &model.Category{ID: 1, Name: "Test1"},
+			category: model.Category{ID: 1, Name: "Test1"},
 			id:       "1",
 			input:    `{"name": "Test1"}`,
 			err:      service.ErrNotFound,
@@ -239,7 +239,7 @@ func Test_updateCategoryHandler(t *testing.T) {
 		},
 		{
 			desc:     "internal error",
-			category: &model.Category{ID: 1, Name: "Test1"},
+			category: model.Category{ID: 1, Name: "Test1"},
 			err:      errTest,
 			id:       "1",
 			input:    `{"name": "Test1"}`,

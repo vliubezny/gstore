@@ -19,16 +19,16 @@ var (
 // Service provides business logic methods.
 type Service interface {
 	// GetCategories returns slice of product categories.
-	GetCategories(ctx context.Context) ([]*model.Category, error)
+	GetCategories(ctx context.Context) ([]model.Category, error)
 
 	// GetCategory returns a product category by ID.
-	GetCategory(ctx context.Context, categoryID int64) (*model.Category, error)
+	GetCategory(ctx context.Context, categoryID int64) (model.Category, error)
 
 	// CreateCategory creates new category.
-	CreateCategory(ctx context.Context, category *model.Category) error
+	CreateCategory(ctx context.Context, category model.Category) (model.Category, error)
 
 	// UpdateCategory updates new category.
-	UpdateCategory(ctx context.Context, category *model.Category) error
+	UpdateCategory(ctx context.Context, category model.Category) error
 
 	// DeleteCategory deletes category from storage.
 	DeleteCategory(ctx context.Context, categoryID int64) error
@@ -75,7 +75,7 @@ func New(s storage.Storage) Service {
 	}
 }
 
-func (s *service) GetCategories(ctx context.Context) ([]*model.Category, error) {
+func (s *service) GetCategories(ctx context.Context) ([]model.Category, error) {
 	categories, err := s.s.GetCategories(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get categories: %w", err)
@@ -83,25 +83,26 @@ func (s *service) GetCategories(ctx context.Context) ([]*model.Category, error) 
 	return categories, nil
 }
 
-func (s *service) GetCategory(ctx context.Context, categoryID int64) (*model.Category, error) {
+func (s *service) GetCategory(ctx context.Context, categoryID int64) (model.Category, error) {
 	category, err := s.s.GetCategory(ctx, categoryID)
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
-			return nil, ErrNotFound
+			return model.Category{}, ErrNotFound
 		}
-		return nil, fmt.Errorf("failed to get category: %w", err)
+		return model.Category{}, fmt.Errorf("failed to get category: %w", err)
 	}
 	return category, nil
 }
 
-func (s *service) CreateCategory(ctx context.Context, category *model.Category) error {
-	if err := s.s.CreateCategory(ctx, category); err != nil {
-		return fmt.Errorf("failed to create category: %w", err)
+func (s *service) CreateCategory(ctx context.Context, category model.Category) (model.Category, error) {
+	c, err := s.s.CreateCategory(ctx, category)
+	if err != nil {
+		return model.Category{}, fmt.Errorf("failed to create category: %w", err)
 	}
-	return nil
+	return c, nil
 }
 
-func (s *service) UpdateCategory(ctx context.Context, category *model.Category) error {
+func (s *service) UpdateCategory(ctx context.Context, category model.Category) error {
 	if err := s.s.UpdateCategory(ctx, category); err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
 			return ErrNotFound

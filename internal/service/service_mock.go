@@ -35,10 +35,10 @@ func (m *MockService) EXPECT() *MockServiceMockRecorder {
 }
 
 // GetCategories mocks base method
-func (m *MockService) GetCategories(ctx context.Context) ([]*model.Category, error) {
+func (m *MockService) GetCategories(ctx context.Context) ([]model.Category, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCategories", ctx)
-	ret0, _ := ret[0].([]*model.Category)
+	ret0, _ := ret[0].([]model.Category)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -50,10 +50,10 @@ func (mr *MockServiceMockRecorder) GetCategories(ctx interface{}) *gomock.Call {
 }
 
 // GetCategory mocks base method
-func (m *MockService) GetCategory(ctx context.Context, categoryID int64) (*model.Category, error) {
+func (m *MockService) GetCategory(ctx context.Context, categoryID int64) (model.Category, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCategory", ctx, categoryID)
-	ret0, _ := ret[0].(*model.Category)
+	ret0, _ := ret[0].(model.Category)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -65,11 +65,12 @@ func (mr *MockServiceMockRecorder) GetCategory(ctx, categoryID interface{}) *gom
 }
 
 // CreateCategory mocks base method
-func (m *MockService) CreateCategory(ctx context.Context, category *model.Category) error {
+func (m *MockService) CreateCategory(ctx context.Context, category model.Category) (model.Category, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateCategory", ctx, category)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(model.Category)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // CreateCategory indicates an expected call of CreateCategory
@@ -79,7 +80,7 @@ func (mr *MockServiceMockRecorder) CreateCategory(ctx, category interface{}) *go
 }
 
 // UpdateCategory mocks base method
-func (m *MockService) UpdateCategory(ctx context.Context, category *model.Category) error {
+func (m *MockService) UpdateCategory(ctx context.Context, category model.Category) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateCategory", ctx, category)
 	ret0, _ := ret[0].(error)

@@ -17,16 +17,16 @@ var (
 // Storage provides methods to interact with data storage.
 type Storage interface {
 	// GetCategories returns slice of product categories.
-	GetCategories(ctx context.Context) ([]*model.Category, error)
+	GetCategories(ctx context.Context) ([]model.Category, error)
 
 	// GetCategory returns a product category by ID.
-	GetCategory(ctx context.Context, categoryID int64) (*model.Category, error)
+	GetCategory(ctx context.Context, categoryID int64) (model.Category, error)
 
 	// CreateCategory creates new category.
-	CreateCategory(ctx context.Context, category *model.Category) error
+	CreateCategory(ctx context.Context, category model.Category) (model.Category, error)
 
 	// UpdateCategory updates new category.
-	UpdateCategory(ctx context.Context, category *model.Category) error
+	UpdateCategory(ctx context.Context, category model.Category) error
 
 	// DeleteCategory deletes category from storage.
 	DeleteCategory(ctx context.Context, categoryID int64) error

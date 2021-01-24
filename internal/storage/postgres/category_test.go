@@ -16,7 +16,7 @@ func TestPg_GetCategories(t *testing.T) {
 	categories, err := s.GetCategories(ctx)
 	require.NoError(t, err)
 
-	assert.Equal(t, []*model.Category{
+	assert.Equal(t, []model.Category{
 		{ID: 1, Name: "Electronics"},
 		{ID: 2, Name: "Computers"},
 		{ID: 3, Name: "Smart Home"},
@@ -34,7 +34,7 @@ func TestPg_GetCategory(t *testing.T) {
 	category, err := s.GetCategory(ctx, 1)
 	require.NoError(t, err)
 
-	assert.Equal(t, &model.Category{ID: 1, Name: "Electronics"}, category)
+	assert.Equal(t, model.Category{ID: 1, Name: "Electronics"}, category)
 }
 
 func TestPg_GetCategory_ErrNotFound(t *testing.T) {
@@ -44,11 +44,11 @@ func TestPg_GetCategory_ErrNotFound(t *testing.T) {
 }
 
 func TestPg_CreateCategory(t *testing.T) {
-	c := &model.Category{
+	c := model.Category{
 		Name: "test category",
 	}
 
-	err := s.CreateCategory(ctx, c)
+	c, err := s.CreateCategory(ctx, c)
 	require.NoError(t, err)
 
 	require.True(t, c.ID > 0, "ID is not populated")
@@ -62,7 +62,7 @@ func TestPg_CreateCategory(t *testing.T) {
 }
 
 func TestPg_UpdateCategory(t *testing.T) {
-	c := &model.Category{
+	c := model.Category{
 		ID:   1,
 		Name: "test category",
 	}
@@ -79,7 +79,7 @@ func TestPg_UpdateCategory(t *testing.T) {
 }
 
 func TestPg_UpdateCategory_ErrNotFound(t *testing.T) {
-	c := &model.Category{
+	c := model.Category{
 		ID:   100500,
 		Name: "test category",
 	}

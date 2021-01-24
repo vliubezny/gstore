@@ -9,13 +9,13 @@ import (
 	"github.com/vliubezny/gstore/internal/storage"
 )
 
-func (p pg) GetCategories(ctx context.Context) ([]*model.Category, error) {
+func (p pg) GetCategories(ctx context.Context) ([]model.Category, error) {
 	var categories []category
 	if err := p.db.SelectContext(ctx, &categories, "SELECT * FROM category"); err != nil {
 		return nil, err
 	}
 
-	data := make([]*model.Category, len(categories))
+	data := make([]model.Category, len(categories))
 	for i, c := range categories {
 		data[i] = c.toModel()
 	}
@@ -23,32 +23,32 @@ func (p pg) GetCategories(ctx context.Context) ([]*model.Category, error) {
 	return data, nil
 }
 
-func (p pg) GetCategory(ctx context.Context, categoryID int64) (*model.Category, error) {
+func (p pg) GetCategory(ctx context.Context, categoryID int64) (model.Category, error) {
 	var c category
 	err := p.db.GetContext(ctx, &c, "SELECT * FROM category WHERE id = $1", categoryID)
 
 	if err == sql.ErrNoRows {
-		return nil, storage.ErrNotFound
+		return model.Category{}, storage.ErrNotFound
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to get category: %w", err)
+		return model.Category{}, fmt.Errorf("failed to get category: %w", err)
 	}
 
 	return c.toModel(), nil
 }
 
-func (p pg) CreateCategory(ctx context.Context, category *model.Category) error {
+func (p pg) CreateCategory(ctx context.Context, category model.Category) (model.Category, error) {
 	var id int64
 	if err := p.db.GetContext(ctx, &id, "INSERT INTO category (name) VALUES ($1) RETURNING id", category.Name); err != nil {
-		return fmt.Errorf("failed to create category: %w", err)
+		return model.Category{}, fmt.Errorf("failed to create category: %w", err)
 	}
 
 	category.ID = id
-	return nil
+	return category, nil
 }
 
-func (p pg) UpdateCategory(ctx context.Context, category *model.Category) error {
+func (p pg) UpdateCategory(ctx context.Context, category model.Category) error {
 	res, err := p.db.ExecContext(ctx, "UPDATE category SET name = $1 WHERE id = $2", category.Name, category.ID)
 
 	if err != nil {

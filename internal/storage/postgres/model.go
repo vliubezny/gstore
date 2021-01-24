@@ -7,8 +7,8 @@ type category struct {
 	Name string `db:"name"`
 }
 
-func (c category) toModel() *model.Category {
-	return &model.Category{
+func (c category) toModel() model.Category {
+	return model.Category{
 		ID:   c.ID,
 		Name: c.Name,
 	}

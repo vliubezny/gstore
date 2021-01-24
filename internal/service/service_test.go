@@ -22,7 +22,7 @@ func TestService_GetCategories(t *testing.T) {
 	defer ctrl.Finish()
 
 	ctx := context.Background()
-	categories := []*model.Category{
+	categories := []model.Category{
 		{ID: 1, Name: "Test1"},
 		{ID: 2, Name: "Test2"},
 	}
@@ -55,30 +55,30 @@ func TestService_GetCategories_Err(t *testing.T) {
 func TestService_GetCategory(t *testing.T) {
 	testCases := []struct {
 		desc      string
-		rCategory *model.Category
+		rCategory model.Category
 		rErr      error
-		category  *model.Category
+		category  model.Category
 		err       error
 	}{
 		{
 			desc:      "success",
-			rCategory: &model.Category{ID: 1, Name: "Test1"},
+			rCategory: model.Category{ID: 1, Name: "Test1"},
 			rErr:      nil,
-			category:  &model.Category{ID: 1, Name: "Test1"},
+			category:  model.Category{ID: 1, Name: "Test1"},
 			err:       nil,
 		},
 		{
 			desc:      "ErrNotFound",
-			rCategory: nil,
+			rCategory: model.Category{},
 			rErr:      storage.ErrNotFound,
-			category:  nil,
+			category:  model.Category{},
 			err:       ErrNotFound,
 		},
 		{
 			desc:      "unexpected error",
-			rCategory: nil,
+			rCategory: model.Category{},
 			rErr:      errTest,
-			category:  nil,
+			category:  model.Category{},
 			err:       errTest,
 		},
 	}
@@ -103,22 +103,25 @@ func TestService_GetCategory(t *testing.T) {
 
 func TestService_CreateCategory(t *testing.T) {
 	testCases := []struct {
-		desc     string
-		rErr     error
-		category *model.Category
-		err      error
+		desc      string
+		rCategory model.Category
+		rErr      error
+		category  model.Category
+		err       error
 	}{
 		{
-			desc:     "success",
-			rErr:     nil,
-			category: &model.Category{ID: 1, Name: "Test1"},
-			err:      nil,
+			desc:      "success",
+			rCategory: model.Category{ID: 1, Name: "Test1"},
+			rErr:      nil,
+			category:  model.Category{Name: "Test1"},
+			err:       nil,
 		},
 		{
-			desc:     "unexpected error",
-			rErr:     errTest,
-			category: &model.Category{ID: 1, Name: "Test1"},
-			err:      errTest,
+			desc:      "unexpected error",
+			rCategory: model.Category{},
+			rErr:      errTest,
+			category:  model.Category{ID: 1, Name: "Test1"},
+			err:       errTest,
 		},
 	}
 	for _, tC := range testCases {
@@ -127,12 +130,13 @@ func TestService_CreateCategory(t *testing.T) {
 			defer ctrl.Finish()
 
 			st := storage.NewMockStorage(ctrl)
-			st.EXPECT().CreateCategory(ctx, tC.category).Return(tC.rErr)
+			st.EXPECT().CreateCategory(ctx, tC.category).Return(tC.rCategory, tC.rErr)
 
 			s := New(st)
 
-			err := s.CreateCategory(ctx, tC.category)
+			c, err := s.CreateCategory(ctx, tC.category)
 			assert.True(t, errors.Is(err, tC.err), fmt.Sprintf("wanted %s got %s", tC.err, err))
+			assert.Equal(t, tC.rCategory, c)
 		})
 	}
 }
@@ -141,25 +145,25 @@ func TestService_UpdateCategory(t *testing.T) {
 	testCases := []struct {
 		desc     string
 		rErr     error
-		category *model.Category
+		category model.Category
 		err      error
 	}{
 		{
 			desc:     "success",
 			rErr:     nil,
-			category: &model.Category{ID: 1, Name: "Test1"},
+			category: model.Category{ID: 1, Name: "Test1"},
 			err:      nil,
 		},
 		{
 			desc:     "ErrNotFound",
 			rErr:     storage.ErrNotFound,
-			category: &model.Category{ID: 1, Name: "Test1"},
+			category: model.Category{ID: 1, Name: "Test1"},
 			err:      ErrNotFound,
 		},
 		{
 			desc:     "unexpected error",
 			rErr:     errTest,
-			category: &model.Category{ID: 1, Name: "Test1"},
+			category: model.Category{ID: 1, Name: "Test1"},
 			err:      errTest,
 		},
 	}
