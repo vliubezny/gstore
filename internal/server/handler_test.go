@@ -179,7 +179,7 @@ func Test_createCategoryHandler(t *testing.T) {
 			}
 
 			router := setupTestRouter(svc)
-			rec, r := newTestParametersWithAuth(http.MethodPost, "/v1/categories", tC.input)
+			rec, r := newTestParameters(http.MethodPost, "/v1/categories", tC.input)
 
 			router.ServeHTTP(rec, r)
 
@@ -258,7 +258,7 @@ func Test_updateCategoryHandler(t *testing.T) {
 			}
 
 			router := setupTestRouter(svc)
-			rec, r := newTestParametersWithAuth(http.MethodPut, fmt.Sprintf("/v1/categories/%s", tC.id), tC.input)
+			rec, r := newTestParameters(http.MethodPut, fmt.Sprintf("/v1/categories/%s", tC.id), tC.input)
 
 			router.ServeHTTP(rec, r)
 
@@ -318,7 +318,7 @@ func Test_deleteCategoryHandler(t *testing.T) {
 			}
 
 			router := setupTestRouter(svc)
-			rec, r := newTestParametersWithAuth(http.MethodDelete, fmt.Sprintf("/v1/categories/%s", tC.id), "")
+			rec, r := newTestParameters(http.MethodDelete, fmt.Sprintf("/v1/categories/%s", tC.id), "")
 
 			router.ServeHTTP(rec, r)
 
@@ -494,7 +494,7 @@ func Test_createStoreHandler(t *testing.T) {
 			}
 
 			router := setupTestRouter(svc)
-			rec, r := newTestParametersWithAuth(http.MethodPost, "/v1/stores", tC.input)
+			rec, r := newTestParameters(http.MethodPost, "/v1/stores", tC.input)
 
 			router.ServeHTTP(rec, r)
 
@@ -573,7 +573,7 @@ func Test_updateStoreHandler(t *testing.T) {
 			}
 
 			router := setupTestRouter(svc)
-			rec, r := newTestParametersWithAuth(http.MethodPut, fmt.Sprintf("/v1/stores/%s", tC.id), tC.input)
+			rec, r := newTestParameters(http.MethodPut, fmt.Sprintf("/v1/stores/%s", tC.id), tC.input)
 
 			router.ServeHTTP(rec, r)
 
@@ -633,7 +633,7 @@ func Test_deleteStoreHandler(t *testing.T) {
 			}
 
 			router := setupTestRouter(svc)
-			rec, r := newTestParametersWithAuth(http.MethodDelete, fmt.Sprintf("/v1/stores/%s", tC.id), "")
+			rec, r := newTestParameters(http.MethodDelete, fmt.Sprintf("/v1/stores/%s", tC.id), "")
 
 			router.ServeHTTP(rec, r)
 

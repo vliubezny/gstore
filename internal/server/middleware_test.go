@@ -8,12 +8,10 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/vliubezny/gstore/internal/auth"
 )
 
 func Test_setContentTypeMiddleware(t *testing.T) {
@@ -79,47 +77,40 @@ func Test_recoveryMiddleware(t *testing.T) {
 }
 
 func Test_basicAuthMiddleware(t *testing.T) {
-	username := "admin"
-	password := "pass"
 	testCases := []struct {
 		desc     string
-		withAuth bool
-		valid    bool
-		err      error
+		username string
+		password string
 		rcode    int
 		rdata    string
 	}{
 		{
-			desc:     "block anonymous",
-			withAuth: false,
-			valid:    false,
-			err:      errSkip,
-			rcode:    http.StatusUnauthorized,
-			rdata:    `{"error":"Unauthorized"}`,
-		},
-		{
-			desc:     "block invalid credentials",
-			withAuth: true,
-			valid:    false,
-			err:      nil,
-			rcode:    http.StatusUnauthorized,
-			rdata:    `{"error":"Unauthorized"}`,
-		},
-		{
 			desc:     "allow valid credentials",
-			withAuth: true,
-			valid:    true,
-			err:      nil,
+			username: testUsername,
+			password: testPassword,
 			rcode:    http.StatusOK,
 			rdata:    `{"result":"OK"}`,
 		},
 		{
-			desc:     "auth internal error",
-			withAuth: true,
-			valid:    false,
-			err:      errTest,
-			rcode:    http.StatusInternalServerError,
-			rdata:    `{"error":"internal error"}`,
+			desc:     "block anonymous",
+			username: "",
+			password: "",
+			rcode:    http.StatusUnauthorized,
+			rdata:    `{"error":"Unauthorized"}`,
+		},
+		{
+			desc:     "block invalid username",
+			username: "invalid",
+			password: testPassword,
+			rcode:    http.StatusUnauthorized,
+			rdata:    `{"error":"Unauthorized"}`,
+		},
+		{
+			desc:     "block invalid password",
+			username: testUsername,
+			password: "invalid",
+			rcode:    http.StatusUnauthorized,
+			rdata:    `{"error":"Unauthorized"}`,
 		},
 	}
 	for _, tC := range testCases {
@@ -129,8 +120,8 @@ func Test_basicAuthMiddleware(t *testing.T) {
 			rec := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodPost, "/", nil).WithContext(ctx)
 
-			if tC.withAuth {
-				req.SetBasicAuth(username, password)
+			if tC.username != "" && tC.password != "" {
+				req.SetBasicAuth(tC.username, tC.password)
 			}
 
 			h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -138,15 +129,7 @@ func Test_basicAuthMiddleware(t *testing.T) {
 				w.Write([]byte(`{"result":"OK"}`))
 			})
 
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
-
-			a := auth.NewMockAuthenticator(ctrl)
-			if tC.err != errSkip {
-				a.EXPECT().Authenticate(username, password).Return(tC.valid, tC.err)
-			}
-
-			basicAuthMiddleware(a)(h).ServeHTTP(rec, req)
+			basicAuthMiddleware(testUsername, testPassword)(h).ServeHTTP(rec, req)
 
 			body, _ := ioutil.ReadAll(rec.Result().Body)
 

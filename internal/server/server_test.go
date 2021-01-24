@@ -18,15 +18,14 @@ import (
 	"github.com/vliubezny/gstore/internal/service"
 )
 
-type allowAll struct{}
-
-func (allowAll) Authenticate(username, password string) (bool, error) {
-	return true, nil
-}
+const (
+	testUsername = "admin"
+	testPassword = "pass123"
+)
 
 func setupTestRouter(s service.Service) http.Handler {
 	r := chi.NewRouter()
-	SetupRouter(s, r, allowAll{})
+	SetupRouter(s, r, testUsername, testPassword)
 	return r
 }
 
@@ -43,12 +42,7 @@ func newTestParameters(method, uri, body string) (*httptest.ResponseRecorder, *h
 		r.Header.Set(headerContentType, contentTypeJSON)
 	}
 
-	return rec, r
-}
-
-func newTestParametersWithAuth(method, uri, body string) (*httptest.ResponseRecorder, *http.Request) {
-	rec, r := newTestParameters(method, uri, body)
-	r.SetBasicAuth("test", "test")
+	r.SetBasicAuth(testUsername, testPassword)
 
 	return rec, r
 }

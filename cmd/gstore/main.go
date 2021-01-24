@@ -12,7 +12,6 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/jessevdk/go-flags"
 	"github.com/sirupsen/logrus"
-	"github.com/vliubezny/gstore/internal/auth"
 	"github.com/vliubezny/gstore/internal/server"
 	"github.com/vliubezny/gstore/internal/service"
 	"github.com/vliubezny/gstore/internal/storage/postgres"
@@ -62,9 +61,7 @@ func main() {
 		opts.PostgresMaxIdleConnections, opts.PostgresMigrations)
 	r := chi.NewMux()
 
-	a := auth.NewStataticAuthenticator(opts.Username, opts.Password)
-
-	server.SetupRouter(service.New(postgres.New(db)), r, a)
+	server.SetupRouter(service.New(postgres.New(db)), r, opts.Username, opts.Password)
 
 	srv := http.Server{
 		Addr:    fmt.Sprintf("%s:%d", opts.Host, opts.Port),

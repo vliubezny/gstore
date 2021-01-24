@@ -8,7 +8,6 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/sirupsen/logrus"
 	"github.com/tomasen/realip"
-	"github.com/vliubezny/gstore/internal/auth"
 )
 
 const (
@@ -55,26 +54,23 @@ func recoveryMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// basicAuthMiddleware handles basic authentication for POST, PUT and DELETE requests.
-func basicAuthMiddleware(a auth.Authenticator) func(http.Handler) http.Handler {
+// basicAuthMiddleware handles basic authentication.
+func basicAuthMiddleware(username, password string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			username, password, ok := r.BasicAuth()
+			l := getLogger(r)
+
+			u, p, ok := r.BasicAuth()
 			if !ok {
-				writeError(getLogger(r), w, http.StatusUnauthorized, "Unauthorized")
+				writeError(l, w, http.StatusUnauthorized, "Unauthorized")
 				return
 			}
 
-			ok, err := a.Authenticate(username, password)
-			if err != nil {
-				writeInternalError(getLogger(r).WithError(err), w, "failed to get authenticate user")
+			if u != username || p != password {
+				writeError(l.WithField("username", u), w, http.StatusUnauthorized, "Unauthorized")
 				return
 			}
 
-			if !ok {
-				writeError(getLogger(r), w, http.StatusUnauthorized, "Unauthorized")
-				return
-			}
 			next.ServeHTTP(w, r)
 		})
 	}
