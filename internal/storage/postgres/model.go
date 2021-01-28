@@ -1,6 +1,9 @@
 package postgres
 
-import "github.com/vliubezny/gstore/internal/model"
+import (
+	"github.com/shopspring/decimal"
+	"github.com/vliubezny/gstore/internal/model"
+)
 
 type category struct {
 	ID   int64  `db:"id"`
@@ -39,5 +42,19 @@ func (i product) toModel() *model.Product {
 		CategoryID:  i.CategoryID,
 		Name:        i.Name,
 		Description: i.Description,
+	}
+}
+
+type position struct {
+	ProductID int64           `db:"product_id"`
+	StoreID   int64           `db:"store_id"`
+	Price     decimal.Decimal `db:"price"`
+}
+
+func (p position) toModel() model.Position {
+	return model.Position{
+		ProductID: p.ProductID,
+		StoreID:   p.StoreID,
+		Price:     p.Price,
 	}
 }

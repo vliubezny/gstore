@@ -12,6 +12,9 @@ import (
 var (
 	// ErrNotFound states that record was not found.
 	ErrNotFound = errors.New("not found")
+
+	// ErrInvalidPrice states that price value is invalid.
+	ErrInvalidPrice = errors.New("price is invalid")
 )
 
 // Storage provides methods to interact with data storage.
@@ -60,4 +63,16 @@ type Storage interface {
 
 	// DeleteProduct deletes product.
 	DeleteProduct(ctx context.Context, productID int64) error
+
+	// GetStorePositions returns slice of store positions.
+	GetStorePositions(ctx context.Context, storeID int64) ([]model.Position, error)
+
+	// GetProductPositions returns slice of product positions.
+	GetProductPositions(ctx context.Context, productID int64) ([]model.Position, error)
+
+	// UpsertPosition updates position or creates new one if it doesn't exist.
+	UpsertPosition(ctx context.Context, position model.Position) error
+
+	// DeletePosition deletes position.
+	DeletePosition(ctx context.Context, productID, storeID int64) error
 }
