@@ -4,142 +4,109 @@ package postgres
 
 import (
 	"errors"
-	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/vliubezny/gstore/internal/model"
 	"github.com/vliubezny/gstore/internal/storage"
 )
 
-func TestPg_GetStores(t *testing.T) {
-	defer func() {
-		_, err := db.Exec(`DELETE FROM store;
-			ALTER SEQUENCE store_id_seq RESTART WITH 1;`)
-		require.NoError(t, err)
-	}()
-
-	_, err := db.Exec(`INSERT INTO store (name) VALUES
+func (s *postgresTestSuite) TestPg_GetStores() {
+	_, err := s.db.Exec(`INSERT INTO store (name) VALUES
 	('iStore'),
 	('Amazon');`)
-	require.NoError(t, err)
+	s.Require().NoError(err)
 
-	stores, err := s.GetStores(ctx)
-	require.NoError(t, err)
+	stores, err := s.s.GetStores(s.ctx)
+	s.Require().NoError(err)
 
-	assert.Equal(t, []*model.Store{
+	s.Equal([]*model.Store{
 		{ID: 1, Name: "iStore"},
 		{ID: 2, Name: "Amazon"},
 	}, stores)
 }
 
-func TestPg_GetStore(t *testing.T) {
-	defer func() {
-		_, err := db.Exec(`DELETE FROM store;
-			ALTER SEQUENCE store_id_seq RESTART WITH 1;`)
-		require.NoError(t, err)
-	}()
+func (s *postgresTestSuite) TestPg_GetStore() {
+	_, err := s.db.Exec(`INSERT INTO store (name) VALUES ('iStore');`)
+	s.Require().NoError(err)
 
-	_, err := db.Exec(`INSERT INTO store (name) VALUES ('iStore');`)
-	require.NoError(t, err)
+	store, err := s.s.GetStore(s.ctx, 1)
+	s.Require().NoError(err)
 
-	store, err := s.GetStore(ctx, 1)
-	require.NoError(t, err)
-
-	assert.Equal(t, &model.Store{ID: 1, Name: "iStore"}, store)
+	s.Equal(&model.Store{ID: 1, Name: "iStore"}, store)
 }
 
-func TestPg_GetStore_ErrNotFound(t *testing.T) {
-	_, err := s.GetStore(ctx, 100500)
+func (s *postgresTestSuite) TestPg_GetStore_ErrNotFound() {
+	_, err := s.s.GetStore(s.ctx, 100500)
 
-	assert.True(t, errors.Is(err, storage.ErrNotFound))
+	s.True(errors.Is(err, storage.ErrNotFound))
 }
 
-func TestPg_CreateStore(t *testing.T) {
-	defer func() {
-		_, err := db.Exec(`DELETE FROM store;
-			ALTER SEQUENCE store_id_seq RESTART WITH 1;`)
-		require.NoError(t, err)
-	}()
-
+func (s *postgresTestSuite) TestPg_CreateStore() {
 	str := &model.Store{
 		Name: "test store",
 	}
 
-	err := s.CreateStore(ctx, str)
-	require.NoError(t, err)
+	err := s.s.CreateStore(s.ctx, str)
+	s.Require().NoError(err)
 
-	require.True(t, str.ID > 0, "ID is not populated")
+	s.Require().True(str.ID > 0, "ID is not populated")
 
-	r := db.QueryRow("SELECT name FROM store WHERE id = $1", str.ID)
+	r := s.db.QueryRow("SELECT name FROM store WHERE id = $1", str.ID)
 	var name string
 	err = r.Scan(&name)
-	require.NoError(t, err)
+	s.Require().NoError(err)
 
-	assert.Equal(t, str.Name, name)
+	s.Equal(str.Name, name)
 }
 
-func TestPg_UpdateStore(t *testing.T) {
-	defer func() {
-		_, err := db.Exec(`DELETE FROM store;
-			ALTER SEQUENCE store_id_seq RESTART WITH 1;`)
-		require.NoError(t, err)
-	}()
-
-	_, err := db.Exec(`INSERT INTO store (name) VALUES ('iStore');`)
-	require.NoError(t, err)
+func (s *postgresTestSuite) TestPg_UpdateStore() {
+	_, err := s.db.Exec(`INSERT INTO store (name) VALUES ('iStore');`)
+	s.Require().NoError(err)
 
 	str := &model.Store{
 		ID:   1,
 		Name: "test store",
 	}
 
-	err = s.UpdateStore(ctx, str)
-	require.NoError(t, err)
+	err = s.s.UpdateStore(s.ctx, str)
+	s.Require().NoError(err)
 
-	r := db.QueryRow("SELECT name FROM store WHERE id = $1", str.ID)
+	r := s.db.QueryRow("SELECT name FROM store WHERE id = $1", str.ID)
 	var name string
 	err = r.Scan(&name)
-	require.NoError(t, err)
+	s.Require().NoError(err)
 
-	assert.Equal(t, str.Name, name)
+	s.Equal(str.Name, name)
 }
 
-func TestPg_UpdateStore_ErrNotFound(t *testing.T) {
+func (s *postgresTestSuite) TestPg_UpdateStore_ErrNotFound() {
 	str := &model.Store{
 		ID:   100500,
 		Name: "test store",
 	}
 
-	err := s.UpdateStore(ctx, str)
+	err := s.s.UpdateStore(s.ctx, str)
 
-	assert.True(t, errors.Is(err, storage.ErrNotFound))
+	s.True(errors.Is(err, storage.ErrNotFound))
 }
 
-func TestPg_DeleteStore(t *testing.T) {
-	defer func() {
-		_, err := db.Exec(`DELETE FROM store;
-			ALTER SEQUENCE store_id_seq RESTART WITH 1;`)
-		require.NoError(t, err)
-	}()
-
-	_, err := db.Exec(`INSERT INTO store (name) VALUES ('iStore');`)
-	require.NoError(t, err)
+func (s *postgresTestSuite) TestPg_DeleteStore() {
+	_, err := s.db.Exec(`INSERT INTO store (name) VALUES ('iStore');`)
+	s.Require().NoError(err)
 	id := int64(1)
 
-	err = s.DeleteStore(ctx, id)
-	require.NoError(t, err)
+	err = s.s.DeleteStore(s.ctx, id)
+	s.Require().NoError(err)
 
-	r := db.QueryRow("SELECT count(*) FROM store WHERE id = $1", id)
+	r := s.db.QueryRow("SELECT count(*) FROM store WHERE id = $1", id)
 	var c int
 	err = r.Scan(&c)
-	require.NoError(t, err)
+	s.Require().NoError(err)
 
-	assert.Equal(t, 0, c)
+	s.Equal(0, c)
 }
 
-func TestPg_DeleteStore_ErrNotFound(t *testing.T) {
-	err := s.DeleteStore(ctx, 100500)
+func (s *postgresTestSuite) TestPg_DeleteStore_ErrNotFound() {
+	err := s.s.DeleteStore(s.ctx, 100500)
 
-	assert.True(t, errors.Is(err, storage.ErrNotFound))
+	s.True(errors.Is(err, storage.ErrNotFound))
 }

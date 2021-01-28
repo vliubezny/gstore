@@ -4,66 +4,45 @@ package postgres
 
 import (
 	"errors"
-	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/vliubezny/gstore/internal/model"
 	"github.com/vliubezny/gstore/internal/storage"
 )
 
-func TestPg_GetProducts(t *testing.T) {
-	defer func() {
-		_, err := db.Exec(`DELETE FROM product;
-		ALTER SEQUENCE product_id_seq RESTART WITH 1;`)
-		require.NoError(t, err)
-	}()
-
+func (s *postgresTestSuite) TestPg_GetProducts() {
 	categoryID := int64(1)
 
-	_, err := db.Exec(`INSERT INTO product (category_id, name, description) VALUES
+	_, err := s.db.Exec(`INSERT INTO product (category_id, name, description) VALUES
 	($1, 'iPhone 11', 'Old iphone'),
 	($1, 'iPhone 12', 'New iphone');`, categoryID)
-	require.NoError(t, err)
+	s.Require().NoError(err)
 
-	products, err := s.GetProducts(ctx, categoryID)
-	require.NoError(t, err)
+	products, err := s.s.GetProducts(s.ctx, categoryID)
+	s.Require().NoError(err)
 
-	assert.Equal(t, []*model.Product{
+	s.Equal([]*model.Product{
 		{ID: 1, CategoryID: categoryID, Name: "iPhone 11", Description: "Old iphone"},
 		{ID: 2, CategoryID: categoryID, Name: "iPhone 12", Description: "New iphone"},
 	}, products)
 }
 
-func TestPg_GetProduct(t *testing.T) {
-	defer func() {
-		_, err := db.Exec(`DELETE FROM product;
-		ALTER SEQUENCE product_id_seq RESTART WITH 1;`)
-		require.NoError(t, err)
-	}()
+func (s *postgresTestSuite) TestPg_GetProduct() {
+	_, err := s.db.Exec(`INSERT INTO product (category_id, name, description) VALUES (1, 'iPhone 11', 'Old iphone');`)
+	s.Require().NoError(err)
 
-	_, err := db.Exec(`INSERT INTO product (category_id, name, description) VALUES (1, 'iPhone 11', 'Old iphone');`)
-	require.NoError(t, err)
+	product, err := s.s.GetProduct(s.ctx, 1)
+	s.Require().NoError(err)
 
-	product, err := s.GetProduct(ctx, 1)
-	require.NoError(t, err)
-
-	assert.Equal(t, &model.Product{ID: 1, CategoryID: 1, Name: "iPhone 11", Description: "Old iphone"}, product)
+	s.Equal(&model.Product{ID: 1, CategoryID: 1, Name: "iPhone 11", Description: "Old iphone"}, product)
 }
 
-func TestPg_GetProduct_ErrNotFound(t *testing.T) {
-	_, err := s.GetProduct(ctx, 100500)
+func (s *postgresTestSuite) TestPg_GetProduct_ErrNotFound() {
+	_, err := s.s.GetProduct(s.ctx, 100500)
 
-	assert.True(t, errors.Is(err, storage.ErrNotFound))
+	s.True(errors.Is(err, storage.ErrNotFound))
 }
 
-func TestPg_CreateProduct(t *testing.T) {
-	defer func() {
-		_, err := db.Exec(`DELETE FROM product;
-		ALTER SEQUENCE product_id_seq RESTART WITH 1;`)
-		require.NoError(t, err)
-	}()
-
+func (s *postgresTestSuite) TestPg_CreateProduct() {
 	prod := &model.Product{
 		ID:          1,
 		CategoryID:  1,
@@ -71,28 +50,22 @@ func TestPg_CreateProduct(t *testing.T) {
 		Description: "Old iphone",
 	}
 
-	err := s.CreateProduct(ctx, prod)
-	require.NoError(t, err)
+	err := s.s.CreateProduct(s.ctx, prod)
+	s.Require().NoError(err)
 
-	require.True(t, prod.ID > 0, "ID is not populated")
+	s.Require().True(prod.ID > 0, "ID is not populated")
 
-	r := db.QueryRow("SELECT id, category_id, name, description FROM product WHERE id = $1", prod.ID)
+	r := s.db.QueryRow("SELECT id, category_id, name, description FROM product WHERE id = $1", prod.ID)
 	res := &model.Product{}
 	err = r.Scan(&res.ID, &res.CategoryID, &res.Name, &res.Description)
-	require.NoError(t, err)
+	s.Require().NoError(err)
 
-	assert.Equal(t, prod, res)
+	s.Equal(prod, res)
 }
 
-func TestPg_UpdateProduct(t *testing.T) {
-	defer func() {
-		_, err := db.Exec(`DELETE FROM product;
-		ALTER SEQUENCE product_id_seq RESTART WITH 1;`)
-		require.NoError(t, err)
-	}()
-
-	_, err := db.Exec(`INSERT INTO product (category_id, name, description) VALUES (1, 'iPhone 11', 'Old iphone');`)
-	require.NoError(t, err)
+func (s *postgresTestSuite) TestPg_UpdateProduct() {
+	_, err := s.db.Exec(`INSERT INTO product (category_id, name, description) VALUES (1, 'iPhone 11', 'Old iphone');`)
+	s.Require().NoError(err)
 
 	prod := &model.Product{
 		ID:          1,
@@ -101,18 +74,18 @@ func TestPg_UpdateProduct(t *testing.T) {
 		Description: "New iphone",
 	}
 
-	err = s.UpdateProduct(ctx, prod)
-	require.NoError(t, err)
+	err = s.s.UpdateProduct(s.ctx, prod)
+	s.Require().NoError(err)
 
-	r := db.QueryRow("SELECT id, category_id, name, description FROM product WHERE id = $1", prod.ID)
+	r := s.db.QueryRow("SELECT id, category_id, name, description FROM product WHERE id = $1", prod.ID)
 	res := &model.Product{}
 	err = r.Scan(&res.ID, &res.CategoryID, &res.Name, &res.Description)
-	require.NoError(t, err)
+	s.Require().NoError(err)
 
-	assert.Equal(t, prod, res)
+	s.Equal(prod, res)
 }
 
-func TestPg_UpdateProduct_ErrNotFound(t *testing.T) {
+func (s *postgresTestSuite) TestPg_UpdateProduct_ErrNotFound() {
 	prod := &model.Product{
 		ID:          100500,
 		CategoryID:  2,
@@ -120,36 +93,30 @@ func TestPg_UpdateProduct_ErrNotFound(t *testing.T) {
 		Description: "New iphone",
 	}
 
-	err := s.UpdateProduct(ctx, prod)
+	err := s.s.UpdateProduct(s.ctx, prod)
 
-	assert.True(t, errors.Is(err, storage.ErrNotFound))
+	s.True(errors.Is(err, storage.ErrNotFound))
 }
 
-func TestPg_DeleteProduct(t *testing.T) {
-	defer func() {
-		_, err := db.Exec(`DELETE FROM product;
-		ALTER SEQUENCE product_id_seq RESTART WITH 1;`)
-		require.NoError(t, err)
-	}()
-
-	_, err := db.Exec(`INSERT INTO product (category_id, name, description) VALUES (1, 'iPhone 11', 'Old iphone');`)
-	require.NoError(t, err)
+func (s *postgresTestSuite) TestPg_DeleteProduct() {
+	_, err := s.db.Exec(`INSERT INTO product (category_id, name, description) VALUES (1, 'iPhone 11', 'Old iphone');`)
+	s.Require().NoError(err)
 
 	id := int64(1)
 
-	err = s.DeleteProduct(ctx, id)
-	require.NoError(t, err)
+	err = s.s.DeleteProduct(s.ctx, id)
+	s.Require().NoError(err)
 
-	r := db.QueryRow("SELECT count(*) FROM product WHERE id = $1", id)
+	r := s.db.QueryRow("SELECT count(*) FROM product WHERE id = $1", id)
 	var c int
 	err = r.Scan(&c)
-	require.NoError(t, err)
+	s.Require().NoError(err)
 
-	assert.Equal(t, 0, c)
+	s.Equal(0, c)
 }
 
-func TestPg_DeleteProduct_ErrNotFound(t *testing.T) {
-	err := s.DeleteProduct(ctx, 100500)
+func (s *postgresTestSuite) TestPg_DeleteProduct_ErrNotFound() {
+	err := s.s.DeleteProduct(s.ctx, 100500)
 
-	assert.True(t, errors.Is(err, storage.ErrNotFound))
+	s.True(errors.Is(err, storage.ErrNotFound))
 }

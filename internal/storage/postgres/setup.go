@@ -14,8 +14,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// MustSetupDB opens DB connection and runs migrations.
-func MustSetupDB(dsn string, maxOpenConns, maxIdleConns int, migrations string) *sql.DB {
+// MustPrepareDB prepares DB connection and migratitor.
+func MustPrepareDB(dsn string, maxOpenConns, maxIdleConns int, migrations string) (*sql.DB, *migrate.Migrate) {
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		logrus.WithError(err).Fatal("failed to create postgres connection")
@@ -37,6 +37,13 @@ func MustSetupDB(dsn string, maxOpenConns, maxIdleConns int, migrations string) 
 	if err != nil {
 		logrus.WithError(err).Fatal("failed to create migrator")
 	}
+
+	return db, migrator
+}
+
+// MustSetupDB opens DB connection and runs migrations.
+func MustSetupDB(dsn string, maxOpenConns, maxIdleConns int, migrations string) *sql.DB {
+	db, migrator := MustPrepareDB(dsn, maxOpenConns, maxIdleConns, migrations)
 
 	checkVersion(migrator)
 
