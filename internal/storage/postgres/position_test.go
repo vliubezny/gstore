@@ -88,9 +88,13 @@ func (s *postgresTestSuite) TestPg_UpsertPosition() {
 
 	s.Equal(p, res)
 
-	p.Price = decimal.Zero
+	s.True(errors.Is(storage.ErrUnknownProduct, s.s.UpsertPosition(s.ctx,
+		model.Position{ProductID: 100, StoreID: 1, Price: decimal.NewFromInt(100)},
+	)))
 
-	s.True(errors.Is(storage.ErrInvalidPrice, s.s.UpsertPosition(s.ctx, p)))
+	s.True(errors.Is(storage.ErrUnknownStore, s.s.UpsertPosition(s.ctx,
+		model.Position{ProductID: 1, StoreID: 100, Price: decimal.NewFromInt(100)},
+	)))
 }
 
 func (s *postgresTestSuite) TestPg_DeletePosition() {

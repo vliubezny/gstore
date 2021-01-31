@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/vliubezny/gstore/internal/model"
 	"github.com/vliubezny/gstore/internal/storage"
@@ -642,6 +643,185 @@ func TestService_DeleteProduct(t *testing.T) {
 			s := New(st)
 
 			err := s.DeleteProduct(ctx, id)
+			assert.True(t, errors.Is(err, tC.err), fmt.Sprintf("wanted %s got %s", tC.err, err))
+		})
+	}
+}
+
+func TestService_GetStorePositions(t *testing.T) {
+	testPositions := []model.Position{
+		{ProductID: 1, StoreID: 1, Price: decimal.NewFromInt(100)},
+		{ProductID: 2, StoreID: 1, Price: decimal.NewFromInt(200)},
+	}
+
+	testCases := []struct {
+		desc       string
+		rPositions []model.Position
+		rErr       error
+		positions  []model.Position
+		err        error
+	}{
+		{
+			desc:       "success",
+			rPositions: testPositions,
+			rErr:       nil,
+			positions:  testPositions,
+			err:        nil,
+		},
+		{
+			desc:       "unexpected error",
+			rPositions: nil,
+			rErr:       errTest,
+			positions:  nil,
+			err:        errTest,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			st := storage.NewMockStorage(ctrl)
+			st.EXPECT().GetStorePositions(ctx, int64(1)).Return(tC.rPositions, tC.rErr)
+
+			s := New(st)
+
+			stores, err := s.GetStorePositions(ctx, 1)
+			assert.True(t, errors.Is(err, tC.err), fmt.Sprintf("wanted %s got %s", tC.err, err))
+			assert.Equal(t, tC.positions, stores)
+		})
+	}
+}
+
+func TestService_GetProductPositions(t *testing.T) {
+	testPositions := []model.Position{
+		{ProductID: 1, StoreID: 1, Price: decimal.NewFromInt(100)},
+		{ProductID: 1, StoreID: 2, Price: decimal.NewFromInt(200)},
+	}
+
+	testCases := []struct {
+		desc       string
+		rPositions []model.Position
+		rErr       error
+		positions  []model.Position
+		err        error
+	}{
+		{
+			desc:       "success",
+			rPositions: testPositions,
+			rErr:       nil,
+			positions:  testPositions,
+			err:        nil,
+		},
+		{
+			desc:       "unexpected error",
+			rPositions: nil,
+			rErr:       errTest,
+			positions:  nil,
+			err:        errTest,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			st := storage.NewMockStorage(ctrl)
+			st.EXPECT().GetProductPositions(ctx, int64(1)).Return(tC.rPositions, tC.rErr)
+
+			s := New(st)
+
+			stores, err := s.GetProductPositions(ctx, 1)
+			assert.True(t, errors.Is(err, tC.err), fmt.Sprintf("wanted %s got %s", tC.err, err))
+			assert.Equal(t, tC.positions, stores)
+		})
+	}
+}
+
+func TestService_SetPosition(t *testing.T) {
+	testCases := []struct {
+		desc     string
+		rErr     error
+		position model.Position
+		err      error
+	}{
+		{
+			desc:     "success",
+			rErr:     nil,
+			position: model.Position{ProductID: 1, StoreID: 1, Price: decimal.NewFromInt(100)},
+			err:      nil,
+		},
+		{
+			desc:     "ErrUnknownProduct",
+			rErr:     storage.ErrUnknownProduct,
+			position: model.Position{ProductID: 1, StoreID: 1, Price: decimal.NewFromInt(100)},
+			err:      ErrUnknownProduct,
+		},
+		{
+			desc:     "ErrUnknownStore",
+			rErr:     storage.ErrUnknownStore,
+			position: model.Position{ProductID: 1, StoreID: 1, Price: decimal.NewFromInt(100)},
+			err:      ErrUnknownStore,
+		},
+		{
+			desc:     "unexpected error",
+			rErr:     errTest,
+			position: model.Position{ProductID: 1, StoreID: 1, Price: decimal.NewFromInt(100)},
+			err:      errTest,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			st := storage.NewMockStorage(ctrl)
+			st.EXPECT().UpsertPosition(ctx, tC.position).Return(tC.rErr)
+
+			s := New(st)
+
+			err := s.SetPosition(ctx, tC.position)
+			assert.True(t, errors.Is(err, tC.err), fmt.Sprintf("wanted %s got %s", tC.err, err))
+		})
+	}
+}
+
+func TestService_DeletePosition(t *testing.T) {
+	testCases := []struct {
+		desc string
+		rErr error
+		err  error
+	}{
+		{
+			desc: "success",
+			rErr: nil,
+			err:  nil,
+		},
+		{
+			desc: "ErrNotFound",
+			rErr: storage.ErrNotFound,
+			err:  ErrNotFound,
+		},
+		{
+			desc: "unexpected error",
+			rErr: errTest,
+			err:  errTest,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			productID := int64(1)
+			storeID := int64(2)
+
+			st := storage.NewMockStorage(ctrl)
+			st.EXPECT().DeletePosition(ctx, productID, storeID).Return(tC.rErr)
+
+			s := New(st)
+
+			err := s.DeletePosition(ctx, productID, storeID)
 			assert.True(t, errors.Is(err, tC.err), fmt.Sprintf("wanted %s got %s", tC.err, err))
 		})
 	}

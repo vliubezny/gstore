@@ -13,8 +13,11 @@ var (
 	// ErrNotFound states that record was not found.
 	ErrNotFound = errors.New("not found")
 
-	// ErrInvalidPrice states that price value is invalid.
-	ErrInvalidPrice = errors.New("price is invalid")
+	// ErrUnknownStore states that store is unknown.
+	ErrUnknownStore = errors.New("store is unknown")
+
+	// ErrUnknownProduct states that product is unknown.
+	ErrUnknownProduct = errors.New("product is unknown")
 )
 
 // Storage provides methods to interact with data storage.

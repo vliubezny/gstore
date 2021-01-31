@@ -9,7 +9,10 @@ import (
 	"github.com/vliubezny/gstore/internal/storage"
 )
 
-const priceConstraint = "position_price_check"
+const (
+	productIDFKConstraint = "position_product_id_fkey"
+	storeIDFKConstraint   = "position_store_id_fkey"
+)
 
 func (p pg) GetStorePositions(ctx context.Context, storeID int64) ([]model.Position, error) {
 	var positions []position
@@ -46,9 +49,15 @@ func (p pg) UpsertPosition(ctx context.Context, position model.Position) error {
 		INSERT INTO position (product_id, store_id, price) VALUES($1, $2, $3)
 			ON CONFLICT(product_id, store_id) DO UPDATE SET price = EXCLUDED.price;
 	`, position.ProductID, position.StoreID, position.Price); err != nil {
-		if err, ok := err.(*pq.Error); ok && err.Constraint == priceConstraint {
-			return storage.ErrInvalidPrice
+		if err, ok := err.(*pq.Error); ok {
+			switch err.Constraint {
+			case productIDFKConstraint:
+				return storage.ErrUnknownProduct
+			case storeIDFKConstraint:
+				return storage.ErrUnknownStore
+			}
 		}
+
 		return fmt.Errorf("failed to upsert position: %w", err)
 	}
 
