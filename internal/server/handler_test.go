@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/vliubezny/gstore/internal/model"
 	"github.com/vliubezny/gstore/internal/service"
@@ -649,6 +650,75 @@ func Test_deleteStoreHandler(t *testing.T) {
 	}
 }
 
+func Test_getStorePositionsHandler(t *testing.T) {
+	testCases := []struct {
+		desc      string
+		storeID   string
+		positions []model.Position
+		err       error
+		rcode     int
+		rdata     string
+	}{
+		{
+			desc:    "success",
+			storeID: "1",
+			positions: []model.Position{
+				{ProductID: 1, StoreID: 1, Price: decimal.NewFromInt(100)},
+				{ProductID: 2, StoreID: 1, Price: decimal.NewFromInt(200)},
+			},
+			err:   nil,
+			rcode: http.StatusOK,
+			rdata: `[{"productId":1, "storeId":1, "price":100},
+				{"productId":2, "storeId":1, "price":200}]`,
+		},
+		{
+			desc:      "internal error",
+			storeID:   "1",
+			positions: nil,
+			err:       errTest,
+			rcode:     http.StatusInternalServerError,
+			rdata:     `{"error":"internal error"}`,
+		},
+		{
+			desc:      "empty store ID",
+			storeID:   "",
+			positions: []model.Position{},
+			err:       errSkip,
+			rcode:     http.StatusBadRequest,
+			rdata:     `{"error":"invalid store ID"}`,
+		},
+		{
+			desc:      "invalid store ID",
+			storeID:   "test",
+			positions: []model.Position{},
+			err:       errSkip,
+			rcode:     http.StatusBadRequest,
+			rdata:     `{"error":"invalid store ID"}`,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			svc := service.NewMockService(ctrl)
+			if tC.err != errSkip {
+				svc.EXPECT().GetStorePositions(gomock.Any(), int64(1)).Return(tC.positions, tC.err)
+			}
+
+			router := setupTestRouter(svc)
+			rec, r := newTestParameters(http.MethodGet, fmt.Sprintf("/v1/stores/%s/positions", tC.storeID), "")
+
+			router.ServeHTTP(rec, r)
+
+			body, _ := ioutil.ReadAll(rec.Result().Body)
+
+			assert.Equal(t, tC.rcode, rec.Result().StatusCode)
+			assert.JSONEq(t, tC.rdata, string(body))
+		})
+	}
+}
+
 func Test_getCategoryProductsHandler(t *testing.T) {
 	testCases := []struct {
 		desc       string
@@ -707,6 +777,75 @@ func Test_getCategoryProductsHandler(t *testing.T) {
 
 			router := setupTestRouter(svc)
 			rec, r := newTestParameters(http.MethodGet, fmt.Sprintf("/v1/categories/%s/products", tC.categoryID), "")
+
+			router.ServeHTTP(rec, r)
+
+			body, _ := ioutil.ReadAll(rec.Result().Body)
+
+			assert.Equal(t, tC.rcode, rec.Result().StatusCode)
+			assert.JSONEq(t, tC.rdata, string(body))
+		})
+	}
+}
+
+func Test_getProductOffersHandler(t *testing.T) {
+	testCases := []struct {
+		desc      string
+		productID string
+		positions []model.Position
+		err       error
+		rcode     int
+		rdata     string
+	}{
+		{
+			desc:      "success",
+			productID: "1",
+			positions: []model.Position{
+				{ProductID: 1, StoreID: 1, Price: decimal.NewFromInt(100)},
+				{ProductID: 1, StoreID: 2, Price: decimal.NewFromInt(200)},
+			},
+			err:   nil,
+			rcode: http.StatusOK,
+			rdata: `[{"productId":1, "storeId":1, "price":100},
+				{"productId":1, "storeId":2, "price":200}]`,
+		},
+		{
+			desc:      "internal error",
+			productID: "1",
+			positions: nil,
+			err:       errTest,
+			rcode:     http.StatusInternalServerError,
+			rdata:     `{"error":"internal error"}`,
+		},
+		{
+			desc:      "empty product ID",
+			productID: "",
+			positions: []model.Position{},
+			err:       errSkip,
+			rcode:     http.StatusBadRequest,
+			rdata:     `{"error":"invalid product ID"}`,
+		},
+		{
+			desc:      "invalid product ID",
+			productID: "test",
+			positions: []model.Position{},
+			err:       errSkip,
+			rcode:     http.StatusBadRequest,
+			rdata:     `{"error":"invalid product ID"}`,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			svc := service.NewMockService(ctrl)
+			if tC.err != errSkip {
+				svc.EXPECT().GetProductPositions(gomock.Any(), int64(1)).Return(tC.positions, tC.err)
+			}
+
+			router := setupTestRouter(svc)
+			rec, r := newTestParameters(http.MethodGet, fmt.Sprintf("/v1/products/%s/offers", tC.productID), "")
 
 			router.ServeHTTP(rec, r)
 

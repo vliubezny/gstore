@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/shopspring/decimal"
 	"github.com/vliubezny/gstore/internal/model"
 )
 
@@ -53,4 +54,26 @@ type product struct {
 	CategoryID  int64  `json:"categoryId"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
+}
+
+type position struct {
+	ProductID int64           `json:"productId"`
+	StoreID   int64           `json:"storeId"`
+	Price     decimal.Decimal `json:"price"`
+}
+
+func fromPositionModel(p model.Position) position {
+	return position{
+		ProductID: p.ProductID,
+		StoreID:   p.StoreID,
+		Price:     p.Price,
+	}
+}
+
+func (p position) toModel() model.Position {
+	return model.Position{
+		ProductID: p.ProductID,
+		StoreID:   p.StoreID,
+		Price:     p.Price,
+	}
 }

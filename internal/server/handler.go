@@ -265,6 +265,31 @@ func (s *server) deleteStoreHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (s *server) getStorePositionsHandler(w http.ResponseWriter, r *http.Request) {
+	l := getLogger(r)
+
+	id := chi.URLParam(r, "id")
+	storeID, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		writeError(l.WithError(err), w, http.StatusBadRequest, "invalid store ID")
+		return
+	}
+
+	positions, err := s.s.GetStorePositions(r.Context(), storeID)
+	if err != nil {
+		writeInternalError(l.WithError(err), w, "fail to get store positions")
+		return
+	}
+
+	resp := make([]position, len(positions))
+
+	for i, p := range positions {
+		resp[i] = fromPositionModel(p)
+	}
+
+	writeOK(l, w, resp)
+}
+
 func (s *server) getCategoryProductsHandler(w http.ResponseWriter, r *http.Request) {
 	l := getLogger(r)
 
@@ -277,7 +302,7 @@ func (s *server) getCategoryProductsHandler(w http.ResponseWriter, r *http.Reque
 
 	products, err := s.s.GetProducts(r.Context(), categoryID)
 	if err != nil {
-		writeInternalError(l.WithError(err), w, "fail to products")
+		writeInternalError(l.WithError(err), w, "fail to get products")
 		return
 	}
 
@@ -290,6 +315,31 @@ func (s *server) getCategoryProductsHandler(w http.ResponseWriter, r *http.Reque
 			Name:        c.Name,
 			Description: c.Description,
 		}
+	}
+
+	writeOK(l, w, resp)
+}
+
+func (s *server) getProductOffersHandler(w http.ResponseWriter, r *http.Request) {
+	l := getLogger(r)
+
+	id := chi.URLParam(r, "id")
+	productID, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		writeError(l.WithError(err), w, http.StatusBadRequest, "invalid product ID")
+		return
+	}
+
+	positions, err := s.s.GetProductPositions(r.Context(), productID)
+	if err != nil {
+		writeInternalError(l.WithError(err), w, "fail to get product offers")
+		return
+	}
+
+	resp := make([]position, len(positions))
+
+	for i, p := range positions {
+		resp[i] = fromPositionModel(p)
 	}
 
 	writeOK(l, w, resp)
