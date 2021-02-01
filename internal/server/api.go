@@ -59,7 +59,7 @@ type product struct {
 type position struct {
 	ProductID int64           `json:"productId"`
 	StoreID   int64           `json:"storeId"`
-	Price     decimal.Decimal `json:"price"`
+	Price     decimal.Decimal `json:"price" validate:"gt=0"`
 }
 
 func fromPositionModel(p model.Position) position {

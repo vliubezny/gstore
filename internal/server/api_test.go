@@ -4,10 +4,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_category_Validate(t *testing.T) {
+func Test_validate_category(t *testing.T) {
 	testCases := []struct {
 		desc string
 		req  category
@@ -52,7 +53,7 @@ func Test_category_Validate(t *testing.T) {
 	}
 }
 
-func Test_store_Validate(t *testing.T) {
+func Test_validate_store(t *testing.T) {
 	testCases := []struct {
 		desc string
 		req  store
@@ -82,6 +83,41 @@ func Test_store_Validate(t *testing.T) {
 			desc: "invalid_name_81",
 			req:  store{Name: strings.Repeat("x", 81)},
 			errs: "name must be at maximum 80 characters in length",
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			err := validate(&tC.req)
+
+			if tC.errs == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.EqualError(t, err, tC.errs)
+			}
+		})
+	}
+}
+
+func Test_validate_position(t *testing.T) {
+	testCases := []struct {
+		desc string
+		req  position
+		errs string
+	}{
+		{
+			desc: "valid_price_positive",
+			req:  position{Price: decimal.NewFromInt(100)},
+			errs: "",
+		},
+		{
+			desc: "invalid_price_0",
+			req:  position{Price: decimal.Zero},
+			errs: "price must be greater than 0",
+		},
+		{
+			desc: "invalid_price_negative",
+			req:  position{Price: decimal.NewFromInt(-10)},
+			errs: "price must be greater than 0",
 		},
 	}
 	for _, tC := range testCases {

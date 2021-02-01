@@ -10,6 +10,7 @@ import (
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
 	en_translations "github.com/go-playground/validator/v10/translations/en"
+	"github.com/shopspring/decimal"
 )
 
 var (
@@ -33,6 +34,14 @@ func init() {
 		}
 		return name
 	})
+
+	validation.RegisterCustomTypeFunc(func(field reflect.Value) interface{} {
+		if d, ok := field.Interface().(decimal.Decimal); ok {
+			f, _ := d.Float64()
+			return f
+		}
+		return nil
+	}, decimal.Decimal{})
 }
 
 // validate validates struct base on field tags and returns tranlated error.
