@@ -22,8 +22,8 @@ type store struct {
 	Name string `db:"name"`
 }
 
-func (s store) toModel() *model.Store {
-	return &model.Store{
+func (s store) toModel() model.Store {
+	return model.Store{
 		ID:   s.ID,
 		Name: s.Name,
 	}

@@ -338,14 +338,14 @@ func Test_deleteCategoryHandler(t *testing.T) {
 func Test_getStoresHandler(t *testing.T) {
 	testCases := []struct {
 		desc   string
-		stores []*model.Store
+		stores []model.Store
 		err    error
 		rcode  int
 		rdata  string
 	}{
 		{
 			desc: "success",
-			stores: []*model.Store{
+			stores: []model.Store{
 				{ID: 1, Name: "Test1"},
 				{ID: 2, Name: "Test2"},
 			},
@@ -385,7 +385,7 @@ func Test_getStoresHandler(t *testing.T) {
 func Test_getStoreHandler(t *testing.T) {
 	testCases := []struct {
 		desc  string
-		store *model.Store
+		store model.Store
 		id    string
 		err   error
 		rcode int
@@ -393,7 +393,7 @@ func Test_getStoreHandler(t *testing.T) {
 	}{
 		{
 			desc:  "success",
-			store: &model.Store{ID: 1, Name: "Test1"},
+			store: model.Store{ID: 1, Name: "Test1"},
 			id:    "1",
 			err:   nil,
 			rcode: http.StatusOK,
@@ -402,7 +402,7 @@ func Test_getStoreHandler(t *testing.T) {
 		{
 			desc:  "invalid store ID",
 			id:    "test",
-			store: nil,
+			store: model.Store{},
 			err:   errSkip,
 			rcode: http.StatusBadRequest,
 			rdata: `{"error":"invalid store ID"}`,
@@ -410,14 +410,14 @@ func Test_getStoreHandler(t *testing.T) {
 		{
 			desc:  "not found",
 			id:    "1",
-			store: nil,
+			store: model.Store{},
 			err:   service.ErrNotFound,
 			rcode: http.StatusNotFound,
 			rdata: `{"error":"store not found"}`,
 		},
 		{
 			desc:  "internal error",
-			store: nil,
+			store: model.Store{},
 			id:    "1",
 			err:   errTest,
 			rcode: http.StatusInternalServerError,
@@ -450,7 +450,7 @@ func Test_getStoreHandler(t *testing.T) {
 func Test_createStoreHandler(t *testing.T) {
 	testCases := []struct {
 		desc  string
-		store *model.Store
+		store model.Store
 		err   error
 		input string
 		rcode int
@@ -458,7 +458,7 @@ func Test_createStoreHandler(t *testing.T) {
 	}{
 		{
 			desc:  "success",
-			store: &model.Store{Name: "Test1"},
+			store: model.Store{Name: "Test1"},
 			err:   nil,
 			input: `{"name": "Test1"}`,
 			rcode: http.StatusOK,
@@ -466,7 +466,7 @@ func Test_createStoreHandler(t *testing.T) {
 		},
 		{
 			desc:  "invalid: missing name",
-			store: nil,
+			store: model.Store{},
 			input: `{}`,
 			err:   errSkip,
 			rcode: http.StatusBadRequest,
@@ -474,7 +474,7 @@ func Test_createStoreHandler(t *testing.T) {
 		},
 		{
 			desc:  "internal error",
-			store: &model.Store{Name: "Test1"},
+			store: model.Store{Name: "Test1"},
 			err:   errTest,
 			input: `{"name": "Test1"}`,
 			rcode: http.StatusInternalServerError,
@@ -488,9 +488,9 @@ func Test_createStoreHandler(t *testing.T) {
 
 			svc := service.NewMockService(ctrl)
 			if tC.err != errSkip {
-				svc.EXPECT().CreateStore(gomock.Any(), tC.store).DoAndReturn(func(_ context.Context, s *model.Store) error {
+				svc.EXPECT().CreateStore(gomock.Any(), tC.store).DoAndReturn(func(_ context.Context, s model.Store) (model.Store, error) {
 					s.ID = 1
-					return tC.err
+					return s, tC.err
 				})
 			}
 
@@ -510,7 +510,7 @@ func Test_createStoreHandler(t *testing.T) {
 func Test_updateStoreHandler(t *testing.T) {
 	testCases := []struct {
 		desc  string
-		store *model.Store
+		store model.Store
 		err   error
 		id    string
 		input string
@@ -519,7 +519,7 @@ func Test_updateStoreHandler(t *testing.T) {
 	}{
 		{
 			desc:  "success",
-			store: &model.Store{ID: 1, Name: "Test1"},
+			store: model.Store{ID: 1, Name: "Test1"},
 			err:   nil,
 			id:    "1",
 			input: `{"name": "Test1"}`,
@@ -528,7 +528,7 @@ func Test_updateStoreHandler(t *testing.T) {
 		},
 		{
 			desc:  "invalid: missing name",
-			store: nil,
+			store: model.Store{},
 			id:    "1",
 			input: `{}`,
 			err:   errSkip,
@@ -537,7 +537,7 @@ func Test_updateStoreHandler(t *testing.T) {
 		},
 		{
 			desc:  "invalid store ID",
-			store: nil,
+			store: model.Store{},
 			id:    "test",
 			input: `{"name": "Test1"}`,
 			err:   errSkip,
@@ -546,7 +546,7 @@ func Test_updateStoreHandler(t *testing.T) {
 		},
 		{
 			desc:  "not found",
-			store: &model.Store{ID: 1, Name: "Test1"},
+			store: model.Store{ID: 1, Name: "Test1"},
 			id:    "1",
 			input: `{"name": "Test1"}`,
 			err:   service.ErrNotFound,
@@ -555,7 +555,7 @@ func Test_updateStoreHandler(t *testing.T) {
 		},
 		{
 			desc:  "internal error",
-			store: &model.Store{ID: 1, Name: "Test1"},
+			store: model.Store{ID: 1, Name: "Test1"},
 			err:   errTest,
 			id:    "1",
 			input: `{"name": "Test1"}`,

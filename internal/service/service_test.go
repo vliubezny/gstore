@@ -225,16 +225,16 @@ func TestService_DeleteCategory(t *testing.T) {
 }
 
 func TestService_GetStores(t *testing.T) {
-	testStores := []*model.Store{
+	testStores := []model.Store{
 		{ID: 1, Name: "AAA"},
 		{ID: 2, Name: "BBB"},
 	}
 
 	testCases := []struct {
 		desc    string
-		rStores []*model.Store
+		rStores []model.Store
 		rErr    error
-		stores  []*model.Store
+		stores  []model.Store
 		err     error
 	}{
 		{
@@ -272,30 +272,30 @@ func TestService_GetStores(t *testing.T) {
 func TestService_GetStore(t *testing.T) {
 	testCases := []struct {
 		desc   string
-		rStore *model.Store
+		rStore model.Store
 		rErr   error
-		store  *model.Store
+		store  model.Store
 		err    error
 	}{
 		{
 			desc:   "success",
-			rStore: &model.Store{ID: 1, Name: "Test1"},
+			rStore: model.Store{ID: 1, Name: "Test1"},
 			rErr:   nil,
-			store:  &model.Store{ID: 1, Name: "Test1"},
+			store:  model.Store{ID: 1, Name: "Test1"},
 			err:    nil,
 		},
 		{
 			desc:   "ErrNotFound",
-			rStore: nil,
+			rStore: model.Store{},
 			rErr:   storage.ErrNotFound,
-			store:  nil,
+			store:  model.Store{},
 			err:    ErrNotFound,
 		},
 		{
 			desc:   "unexpected error",
-			rStore: nil,
+			rStore: model.Store{},
 			rErr:   errTest,
-			store:  nil,
+			store:  model.Store{},
 			err:    errTest,
 		},
 	}
@@ -320,22 +320,25 @@ func TestService_GetStore(t *testing.T) {
 
 func TestService_CreateStore(t *testing.T) {
 	testCases := []struct {
-		desc  string
-		rErr  error
-		store *model.Store
-		err   error
+		desc   string
+		rStore model.Store
+		rErr   error
+		store  model.Store
+		err    error
 	}{
 		{
-			desc:  "success",
-			rErr:  nil,
-			store: &model.Store{ID: 1, Name: "Test1"},
-			err:   nil,
+			desc:   "success",
+			rStore: model.Store{ID: 1, Name: "Test1"},
+			rErr:   nil,
+			store:  model.Store{Name: "Test1"},
+			err:    nil,
 		},
 		{
-			desc:  "unexpected error",
-			rErr:  errTest,
-			store: &model.Store{ID: 1, Name: "Test1"},
-			err:   errTest,
+			desc:   "unexpected error",
+			rStore: model.Store{},
+			rErr:   errTest,
+			store:  model.Store{Name: "Test1"},
+			err:    errTest,
 		},
 	}
 	for _, tC := range testCases {
@@ -344,12 +347,14 @@ func TestService_CreateStore(t *testing.T) {
 			defer ctrl.Finish()
 
 			st := storage.NewMockStorage(ctrl)
-			st.EXPECT().CreateStore(ctx, tC.store).Return(tC.rErr)
+			st.EXPECT().CreateStore(ctx, tC.store).Return(tC.rStore, tC.rErr)
 
 			s := New(st)
 
-			err := s.CreateStore(ctx, tC.store)
+			str, err := s.CreateStore(ctx, tC.store)
+
 			assert.True(t, errors.Is(err, tC.err), fmt.Sprintf("wanted %s got %s", tC.err, err))
+			assert.Equal(t, tC.rStore, str)
 		})
 	}
 }
@@ -358,25 +363,25 @@ func TestService_UpdateStore(t *testing.T) {
 	testCases := []struct {
 		desc  string
 		rErr  error
-		store *model.Store
+		store model.Store
 		err   error
 	}{
 		{
 			desc:  "success",
 			rErr:  nil,
-			store: &model.Store{ID: 1, Name: "Test1"},
+			store: model.Store{ID: 1, Name: "Test1"},
 			err:   nil,
 		},
 		{
 			desc:  "ErrNotFound",
 			rErr:  storage.ErrNotFound,
-			store: &model.Store{ID: 1, Name: "Test1"},
+			store: model.Store{ID: 1, Name: "Test1"},
 			err:   ErrNotFound,
 		},
 		{
 			desc:  "unexpected error",
 			rErr:  errTest,
-			store: &model.Store{ID: 1, Name: "Test1"},
+			store: model.Store{ID: 1, Name: "Test1"},
 			err:   errTest,
 		},
 	}

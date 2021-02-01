@@ -40,16 +40,16 @@ type Service interface {
 	DeleteCategory(ctx context.Context, categoryID int64) error
 
 	// GetStores returns slice of stores.
-	GetStores(ctx context.Context) ([]*model.Store, error)
+	GetStores(ctx context.Context) ([]model.Store, error)
 
 	// GetStore returns a product store by ID.
-	GetStore(ctx context.Context, storeID int64) (*model.Store, error)
+	GetStore(ctx context.Context, storeID int64) (model.Store, error)
 
 	// CreateStore creates new store.
-	CreateStore(ctx context.Context, store *model.Store) error
+	CreateStore(ctx context.Context, store model.Store) (model.Store, error)
 
 	// UpdateStore updates store.
-	UpdateStore(ctx context.Context, store *model.Store) error
+	UpdateStore(ctx context.Context, store model.Store) error
 
 	// DeleteStore deletes store from storage.
 	DeleteStore(ctx context.Context, storeID int64) error
@@ -140,7 +140,7 @@ func (s *service) DeleteCategory(ctx context.Context, categoryID int64) error {
 	return nil
 }
 
-func (s *service) GetStores(ctx context.Context) ([]*model.Store, error) {
+func (s *service) GetStores(ctx context.Context) ([]model.Store, error) {
 	stores, err := s.s.GetStores(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get stores: %w", err)
@@ -148,25 +148,26 @@ func (s *service) GetStores(ctx context.Context) ([]*model.Store, error) {
 	return stores, nil
 }
 
-func (s *service) GetStore(ctx context.Context, storeID int64) (*model.Store, error) {
+func (s *service) GetStore(ctx context.Context, storeID int64) (model.Store, error) {
 	store, err := s.s.GetStore(ctx, storeID)
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
-			return nil, ErrNotFound
+			return model.Store{}, ErrNotFound
 		}
-		return nil, fmt.Errorf("failed to get store: %w", err)
+		return model.Store{}, fmt.Errorf("failed to get store: %w", err)
 	}
 	return store, nil
 }
 
-func (s *service) CreateStore(ctx context.Context, store *model.Store) error {
-	if err := s.s.CreateStore(ctx, store); err != nil {
-		return fmt.Errorf("failed to create store: %w", err)
+func (s *service) CreateStore(ctx context.Context, store model.Store) (model.Store, error) {
+	store, err := s.s.CreateStore(ctx, store)
+	if err != nil {
+		return model.Store{}, fmt.Errorf("failed to create store: %w", err)
 	}
-	return nil
+	return store, nil
 }
 
-func (s *service) UpdateStore(ctx context.Context, store *model.Store) error {
+func (s *service) UpdateStore(ctx context.Context, store model.Store) error {
 	if err := s.s.UpdateStore(ctx, store); err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
 			return ErrNotFound

@@ -145,13 +145,10 @@ func (s *server) getStoresHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := make([]*store, len(stores))
+	resp := make([]store, len(stores))
 
-	for i, c := range stores {
-		resp[i] = &store{
-			ID:   c.ID,
-			Name: c.Name,
-		}
+	for i, str := range stores {
+		resp[i] = fromStoreModel(str)
 	}
 
 	writeOK(l, w, resp)
@@ -195,8 +192,8 @@ func (s *server) createStoreHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	str := req.toModel()
-	if err := s.s.CreateStore(r.Context(), str); err != nil {
+	str, err := s.s.CreateStore(r.Context(), req.toModel())
+	if err != nil {
 		writeInternalError(l.WithError(err), w, "fail to create store")
 		return
 	}

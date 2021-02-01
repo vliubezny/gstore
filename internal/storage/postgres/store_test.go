@@ -18,7 +18,7 @@ func (s *postgresTestSuite) TestPg_GetStores() {
 	stores, err := s.s.GetStores(s.ctx)
 	s.Require().NoError(err)
 
-	s.Equal([]*model.Store{
+	s.Equal([]model.Store{
 		{ID: 1, Name: "iStore"},
 		{ID: 2, Name: "Amazon"},
 	}, stores)
@@ -31,7 +31,7 @@ func (s *postgresTestSuite) TestPg_GetStore() {
 	store, err := s.s.GetStore(s.ctx, 1)
 	s.Require().NoError(err)
 
-	s.Equal(&model.Store{ID: 1, Name: "iStore"}, store)
+	s.Equal(model.Store{ID: 1, Name: "iStore"}, store)
 }
 
 func (s *postgresTestSuite) TestPg_GetStore_ErrNotFound() {
@@ -41,11 +41,11 @@ func (s *postgresTestSuite) TestPg_GetStore_ErrNotFound() {
 }
 
 func (s *postgresTestSuite) TestPg_CreateStore() {
-	str := &model.Store{
+	str := model.Store{
 		Name: "test store",
 	}
 
-	err := s.s.CreateStore(s.ctx, str)
+	str, err := s.s.CreateStore(s.ctx, str)
 	s.Require().NoError(err)
 
 	s.Require().True(str.ID > 0, "ID is not populated")
@@ -62,7 +62,7 @@ func (s *postgresTestSuite) TestPg_UpdateStore() {
 	_, err := s.db.Exec(`INSERT INTO store (name) VALUES ('iStore');`)
 	s.Require().NoError(err)
 
-	str := &model.Store{
+	str := model.Store{
 		ID:   1,
 		Name: "test store",
 	}
@@ -79,7 +79,7 @@ func (s *postgresTestSuite) TestPg_UpdateStore() {
 }
 
 func (s *postgresTestSuite) TestPg_UpdateStore_ErrNotFound() {
-	str := &model.Store{
+	str := model.Store{
 		ID:   100500,
 		Name: "test store",
 	}
