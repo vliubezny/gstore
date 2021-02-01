@@ -51,9 +51,9 @@ func (s store) toModel() model.Store {
 
 type product struct {
 	ID          int64  `json:"id"`
-	CategoryID  int64  `json:"categoryId"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	CategoryID  int64  `json:"categoryId" validate:"required"`
+	Name        string `json:"name" validate:"required,gte=3,lte=160"`
+	Description string `json:"description" validate:"required"`
 }
 
 func fromProductModel(p model.Product) product {
