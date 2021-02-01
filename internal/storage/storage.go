@@ -13,6 +13,9 @@ var (
 	// ErrNotFound states that record was not found.
 	ErrNotFound = errors.New("not found")
 
+	// ErrUnknownCategory states that category is unknown.
+	ErrUnknownCategory = errors.New("category is unknown")
+
 	// ErrUnknownStore states that store is unknown.
 	ErrUnknownStore = errors.New("store is unknown")
 

@@ -60,6 +60,9 @@ func (s *postgresTestSuite) TestPg_CreateProduct() {
 	s.Require().NoError(err)
 
 	s.Equal(prod, res)
+
+	_, err = s.s.CreateProduct(s.ctx, model.Product{CategoryID: 100, Name: "test", Description: "test"})
+	s.True(errors.Is(storage.ErrUnknownCategory, err))
 }
 
 func (s *postgresTestSuite) TestPg_UpdateProduct() {
@@ -82,19 +85,14 @@ func (s *postgresTestSuite) TestPg_UpdateProduct() {
 	s.Require().NoError(err)
 
 	s.Equal(prod, res)
-}
 
-func (s *postgresTestSuite) TestPg_UpdateProduct_ErrNotFound() {
-	prod := model.Product{
-		ID:          100500,
-		CategoryID:  2,
-		Name:        "iPhone 12",
-		Description: "New iphone",
-	}
+	s.True(errors.Is(storage.ErrNotFound, s.s.UpdateProduct(s.ctx,
+		model.Product{ID: 100, CategoryID: 2, Name: "test", Description: "test"},
+	)))
 
-	err := s.s.UpdateProduct(s.ctx, prod)
-
-	s.True(errors.Is(err, storage.ErrNotFound))
+	s.True(errors.Is(storage.ErrUnknownCategory, s.s.UpdateProduct(s.ctx,
+		model.Product{ID: 1, CategoryID: 100, Name: "test", Description: "test"},
+	)))
 }
 
 func (s *postgresTestSuite) TestPg_DeleteProduct() {

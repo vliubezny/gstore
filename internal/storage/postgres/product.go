@@ -5,9 +5,12 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/lib/pq"
 	"github.com/vliubezny/gstore/internal/model"
 	"github.com/vliubezny/gstore/internal/storage"
 )
+
+const categoryIDFKConstraint = "product_category_id_fkey"
 
 func (p pg) GetProducts(ctx context.Context, categoryID int64) ([]model.Product, error) {
 	var products []product
@@ -43,6 +46,10 @@ func (p pg) CreateProduct(ctx context.Context, product model.Product) (model.Pro
 	if err := p.db.GetContext(ctx, &product.ID, `
 			INSERT INTO product (category_id, name, description) VALUES ($1, $2, $3) RETURNING id
 		`, product.CategoryID, product.Name, product.Description); err != nil {
+
+		if err, ok := err.(*pq.Error); ok && err.Constraint == categoryIDFKConstraint {
+			return model.Product{}, storage.ErrUnknownCategory
+		}
 		return model.Product{}, fmt.Errorf("failed to create product: %w", err)
 	}
 	return product, nil
@@ -58,6 +65,9 @@ func (p pg) UpdateProduct(ctx context.Context, product model.Product) error {
 	`, product.ID, product.CategoryID, product.Name, product.Description)
 
 	if err != nil {
+		if err, ok := err.(*pq.Error); ok && err.Constraint == categoryIDFKConstraint {
+			return storage.ErrUnknownCategory
+		}
 		return fmt.Errorf("failed to update product: %w", err)
 	}
 

@@ -15,6 +15,9 @@ var (
 	// ErrNotFound states that object(s) was not found.
 	ErrNotFound = errors.New("not found")
 
+	// ErrUnknownCategory states that category is unknown.
+	ErrUnknownCategory = errors.New("category is unknown")
+
 	// ErrUnknownStore states that store is unknown.
 	ErrUnknownStore = errors.New("store is unknown")
 
@@ -209,6 +212,9 @@ func (s *service) GetProduct(ctx context.Context, productID int64) (model.Produc
 func (s *service) CreateProduct(ctx context.Context, product model.Product) (model.Product, error) {
 	product, err := s.s.CreateProduct(ctx, product)
 	if err != nil {
+		if errors.Is(err, storage.ErrUnknownCategory) {
+			return model.Product{}, ErrUnknownCategory
+		}
 		return model.Product{}, fmt.Errorf("failed to create product: %w", err)
 	}
 	return product, nil
@@ -216,7 +222,10 @@ func (s *service) CreateProduct(ctx context.Context, product model.Product) (mod
 
 func (s *service) UpdateProduct(ctx context.Context, product model.Product) error {
 	if err := s.s.UpdateProduct(ctx, product); err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
+		switch {
+		case errors.Is(err, storage.ErrUnknownCategory):
+			return ErrUnknownCategory
+		case errors.Is(err, storage.ErrNotFound):
 			return ErrNotFound
 		}
 		return fmt.Errorf("failed to update product: %w", err)

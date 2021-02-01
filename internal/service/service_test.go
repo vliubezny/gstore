@@ -551,6 +551,13 @@ func TestService_CreateProduct(t *testing.T) {
 			err:      nil,
 		},
 		{
+			desc:     "ErrUnknownCategory",
+			rProduct: model.Product{},
+			rErr:     storage.ErrUnknownCategory,
+			product:  model.Product{CategoryID: 1, Name: "Test1", Description: "1 test"},
+			err:      ErrUnknownCategory,
+		},
+		{
 			desc:     "unexpected error",
 			rProduct: model.Product{},
 			rErr:     errTest,
@@ -594,6 +601,12 @@ func TestService_UpdateProduct(t *testing.T) {
 			rErr:    storage.ErrNotFound,
 			product: model.Product{ID: 1, CategoryID: 1, Name: "Test1", Description: "1 test"},
 			err:     ErrNotFound,
+		},
+		{
+			desc:    "ErrUnknownCategory",
+			rErr:    storage.ErrUnknownCategory,
+			product: model.Product{ID: 1, CategoryID: 1, Name: "Test1", Description: "1 test"},
+			err:     ErrUnknownCategory,
 		},
 		{
 			desc:    "unexpected error",
