@@ -39,12 +39,9 @@ func (p pg) GetCategory(ctx context.Context, categoryID int64) (model.Category, 
 }
 
 func (p pg) CreateCategory(ctx context.Context, category model.Category) (model.Category, error) {
-	var id int64
-	if err := p.db.GetContext(ctx, &id, "INSERT INTO category (name) VALUES ($1) RETURNING id", category.Name); err != nil {
+	if err := p.db.GetContext(ctx, &category.ID, "INSERT INTO category (name) VALUES ($1) RETURNING id", category.Name); err != nil {
 		return model.Category{}, fmt.Errorf("failed to create category: %w", err)
 	}
-
-	category.ID = id
 	return category, nil
 }
 

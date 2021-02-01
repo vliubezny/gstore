@@ -55,16 +55,16 @@ type Service interface {
 	DeleteStore(ctx context.Context, storeID int64) error
 
 	// GetProducts returns slice of products in category.
-	GetProducts(ctx context.Context, categoryID int64) ([]*model.Product, error)
+	GetProducts(ctx context.Context, categoryID int64) ([]model.Product, error)
 
 	// GetProduct returns a product by ID.
-	GetProduct(ctx context.Context, productID int64) (*model.Product, error)
+	GetProduct(ctx context.Context, productID int64) (model.Product, error)
 
 	// CreateProduct creates new product.
-	CreateProduct(ctx context.Context, product *model.Product) error
+	CreateProduct(ctx context.Context, product model.Product) (model.Product, error)
 
 	// UpdateProduct updates product.
-	UpdateProduct(ctx context.Context, product *model.Product) error
+	UpdateProduct(ctx context.Context, product model.Product) error
 
 	// DeleteProduct deletes product.
 	DeleteProduct(ctx context.Context, productID int64) error
@@ -187,7 +187,7 @@ func (s *service) DeleteStore(ctx context.Context, storeID int64) error {
 	return nil
 }
 
-func (s *service) GetProducts(ctx context.Context, categoryID int64) ([]*model.Product, error) {
+func (s *service) GetProducts(ctx context.Context, categoryID int64) ([]model.Product, error) {
 	products, err := s.s.GetProducts(ctx, categoryID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get products: %w", err)
@@ -195,25 +195,26 @@ func (s *service) GetProducts(ctx context.Context, categoryID int64) ([]*model.P
 	return products, nil
 }
 
-func (s *service) GetProduct(ctx context.Context, productID int64) (*model.Product, error) {
+func (s *service) GetProduct(ctx context.Context, productID int64) (model.Product, error) {
 	product, err := s.s.GetProduct(ctx, productID)
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
-			return nil, ErrNotFound
+			return model.Product{}, ErrNotFound
 		}
-		return nil, fmt.Errorf("failed to get product: %w", err)
+		return model.Product{}, fmt.Errorf("failed to get product: %w", err)
 	}
 	return product, nil
 }
 
-func (s *service) CreateProduct(ctx context.Context, product *model.Product) error {
-	if err := s.s.CreateProduct(ctx, product); err != nil {
-		return fmt.Errorf("failed to create product: %w", err)
+func (s *service) CreateProduct(ctx context.Context, product model.Product) (model.Product, error) {
+	product, err := s.s.CreateProduct(ctx, product)
+	if err != nil {
+		return model.Product{}, fmt.Errorf("failed to create product: %w", err)
 	}
-	return nil
+	return product, nil
 }
 
-func (s *service) UpdateProduct(ctx context.Context, product *model.Product) error {
+func (s *service) UpdateProduct(ctx context.Context, product model.Product) error {
 	if err := s.s.UpdateProduct(ctx, product); err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
 			return ErrNotFound

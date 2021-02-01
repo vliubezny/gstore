@@ -303,15 +303,10 @@ func (s *server) getCategoryProductsHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	resp := make([]*product, len(products))
+	resp := make([]product, len(products))
 
-	for i, c := range products {
-		resp[i] = &product{
-			ID:          c.ID,
-			CategoryID:  c.CategoryID,
-			Name:        c.Name,
-			Description: c.Description,
-		}
+	for i, p := range products {
+		resp[i] = fromProductModel(p)
 	}
 
 	writeOK(l, w, resp)

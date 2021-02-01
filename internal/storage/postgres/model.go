@@ -36,8 +36,8 @@ type product struct {
 	Description string `db:"description"`
 }
 
-func (i product) toModel() *model.Product {
-	return &model.Product{
+func (i product) toModel() model.Product {
+	return model.Product{
 		ID:          i.ID,
 		CategoryID:  i.CategoryID,
 		Name:        i.Name,

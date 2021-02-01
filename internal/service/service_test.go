@@ -442,16 +442,16 @@ func TestService_DeleteStore(t *testing.T) {
 }
 
 func TestService_GetProducts(t *testing.T) {
-	testProducts := []*model.Product{
+	testProducts := []model.Product{
 		{ID: 1, CategoryID: 1, Name: "AAA", Description: "D-AAA"},
 		{ID: 2, CategoryID: 1, Name: "BBB", Description: "D-BBB"},
 	}
 
 	testCases := []struct {
 		desc      string
-		rProducts []*model.Product
+		rProducts []model.Product
 		rErr      error
-		products  []*model.Product
+		products  []model.Product
 		err       error
 	}{
 		{
@@ -489,30 +489,30 @@ func TestService_GetProducts(t *testing.T) {
 func TestService_GetProduct(t *testing.T) {
 	testCases := []struct {
 		desc     string
-		rProduct *model.Product
+		rProduct model.Product
 		rErr     error
-		product  *model.Product
+		product  model.Product
 		err      error
 	}{
 		{
 			desc:     "success",
-			rProduct: &model.Product{ID: 1, CategoryID: 1, Name: "Test1", Description: "1 test"},
+			rProduct: model.Product{ID: 1, CategoryID: 1, Name: "Test1", Description: "1 test"},
 			rErr:     nil,
-			product:  &model.Product{ID: 1, CategoryID: 1, Name: "Test1", Description: "1 test"},
+			product:  model.Product{ID: 1, CategoryID: 1, Name: "Test1", Description: "1 test"},
 			err:      nil,
 		},
 		{
 			desc:     "ErrNotFound",
-			rProduct: nil,
+			rProduct: model.Product{},
 			rErr:     storage.ErrNotFound,
-			product:  nil,
+			product:  model.Product{},
 			err:      ErrNotFound,
 		},
 		{
 			desc:     "unexpected error",
-			rProduct: nil,
+			rProduct: model.Product{},
 			rErr:     errTest,
-			product:  nil,
+			product:  model.Product{},
 			err:      errTest,
 		},
 	}
@@ -537,22 +537,25 @@ func TestService_GetProduct(t *testing.T) {
 
 func TestService_CreateProduct(t *testing.T) {
 	testCases := []struct {
-		desc    string
-		rErr    error
-		product *model.Product
-		err     error
+		desc     string
+		rProduct model.Product
+		rErr     error
+		product  model.Product
+		err      error
 	}{
 		{
-			desc:    "success",
-			rErr:    nil,
-			product: &model.Product{ID: 1, CategoryID: 1, Name: "Test1", Description: "1 test"},
-			err:     nil,
+			desc:     "success",
+			rProduct: model.Product{ID: 1, CategoryID: 1, Name: "Test1", Description: "1 test"},
+			rErr:     nil,
+			product:  model.Product{CategoryID: 1, Name: "Test1", Description: "1 test"},
+			err:      nil,
 		},
 		{
-			desc:    "unexpected error",
-			rErr:    errTest,
-			product: &model.Product{ID: 1, CategoryID: 1, Name: "Test1", Description: "1 test"},
-			err:     errTest,
+			desc:     "unexpected error",
+			rProduct: model.Product{},
+			rErr:     errTest,
+			product:  model.Product{CategoryID: 1, Name: "Test1", Description: "1 test"},
+			err:      errTest,
 		},
 	}
 	for _, tC := range testCases {
@@ -561,12 +564,14 @@ func TestService_CreateProduct(t *testing.T) {
 			defer ctrl.Finish()
 
 			st := storage.NewMockStorage(ctrl)
-			st.EXPECT().CreateProduct(ctx, tC.product).Return(tC.rErr)
+			st.EXPECT().CreateProduct(ctx, tC.product).Return(tC.rProduct, tC.rErr)
 
 			s := New(st)
 
-			err := s.CreateProduct(ctx, tC.product)
+			p, err := s.CreateProduct(ctx, tC.product)
+
 			assert.True(t, errors.Is(err, tC.err), fmt.Sprintf("wanted %s got %s", tC.err, err))
+			assert.Equal(t, tC.rProduct, p)
 		})
 	}
 }
@@ -575,25 +580,25 @@ func TestService_UpdateProduct(t *testing.T) {
 	testCases := []struct {
 		desc    string
 		rErr    error
-		product *model.Product
+		product model.Product
 		err     error
 	}{
 		{
 			desc:    "success",
 			rErr:    nil,
-			product: &model.Product{ID: 1, CategoryID: 1, Name: "Test1", Description: "1 test"},
+			product: model.Product{ID: 1, CategoryID: 1, Name: "Test1", Description: "1 test"},
 			err:     nil,
 		},
 		{
 			desc:    "ErrNotFound",
 			rErr:    storage.ErrNotFound,
-			product: &model.Product{ID: 1, CategoryID: 1, Name: "Test1", Description: "1 test"},
+			product: model.Product{ID: 1, CategoryID: 1, Name: "Test1", Description: "1 test"},
 			err:     ErrNotFound,
 		},
 		{
 			desc:    "unexpected error",
 			rErr:    errTest,
-			product: &model.Product{ID: 1, CategoryID: 1, Name: "Test1", Description: "1 test"},
+			product: model.Product{ID: 1, CategoryID: 1, Name: "Test1", Description: "1 test"},
 			err:     errTest,
 		},
 	}

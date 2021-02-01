@@ -56,6 +56,24 @@ type product struct {
 	Description string `json:"description"`
 }
 
+func fromProductModel(p model.Product) product {
+	return product{
+		ID:          p.ID,
+		CategoryID:  p.CategoryID,
+		Name:        p.Name,
+		Description: p.Description,
+	}
+}
+
+func (p product) toModel() model.Product {
+	return model.Product{
+		ID:          p.ID,
+		CategoryID:  p.CategoryID,
+		Name:        p.Name,
+		Description: p.Description,
+	}
+}
+
 type position struct {
 	ProductID int64           `json:"productId"`
 	StoreID   int64           `json:"storeId"`

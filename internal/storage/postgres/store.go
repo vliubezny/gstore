@@ -39,12 +39,9 @@ func (p pg) GetStore(ctx context.Context, storeID int64) (model.Store, error) {
 }
 
 func (p pg) CreateStore(ctx context.Context, store model.Store) (model.Store, error) {
-	var id int64
-	if err := p.db.GetContext(ctx, &id, "INSERT INTO store (name) VALUES ($1) RETURNING id", store.Name); err != nil {
+	if err := p.db.GetContext(ctx, &store.ID, "INSERT INTO store (name) VALUES ($1) RETURNING id", store.Name); err != nil {
 		return model.Store{}, fmt.Errorf("failed to create store: %w", err)
 	}
-
-	store.ID = id
 	return store, nil
 }
 

@@ -53,16 +53,16 @@ type Storage interface {
 	DeleteStore(ctx context.Context, storeID int64) error
 
 	// GetProducts returns slice of products in category.
-	GetProducts(ctx context.Context, categoryID int64) ([]*model.Product, error)
+	GetProducts(ctx context.Context, categoryID int64) ([]model.Product, error)
 
 	// GetProduct returns a product by ID.
-	GetProduct(ctx context.Context, productID int64) (*model.Product, error)
+	GetProduct(ctx context.Context, productID int64) (model.Product, error)
 
 	// CreateProduct creates new product.
-	CreateProduct(ctx context.Context, product *model.Product) error
+	CreateProduct(ctx context.Context, product model.Product) (model.Product, error)
 
 	// UpdateProduct updates product.
-	UpdateProduct(ctx context.Context, product *model.Product) error
+	UpdateProduct(ctx context.Context, product model.Product) error
 
 	// DeleteProduct deletes product.
 	DeleteProduct(ctx context.Context, productID int64) error

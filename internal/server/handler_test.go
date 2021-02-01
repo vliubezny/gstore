@@ -723,7 +723,7 @@ func Test_getCategoryProductsHandler(t *testing.T) {
 	testCases := []struct {
 		desc       string
 		categoryID string
-		products   []*model.Product
+		products   []model.Product
 		err        error
 		rcode      int
 		rdata      string
@@ -731,7 +731,7 @@ func Test_getCategoryProductsHandler(t *testing.T) {
 		{
 			desc:       "success",
 			categoryID: "1",
-			products: []*model.Product{
+			products: []model.Product{
 				{ID: 1, CategoryID: 1, Name: "Test1", Description: "Desc 1"},
 				{ID: 2, CategoryID: 1, Name: "Test2", Description: "Desc 2"},
 			},
@@ -751,7 +751,7 @@ func Test_getCategoryProductsHandler(t *testing.T) {
 		{
 			desc:       "empty store ID",
 			categoryID: "",
-			products:   []*model.Product{},
+			products:   []model.Product{},
 			err:        errSkip,
 			rcode:      http.StatusBadRequest,
 			rdata:      `{"error":"invalid category ID"}`,
@@ -759,7 +759,7 @@ func Test_getCategoryProductsHandler(t *testing.T) {
 		{
 			desc:       "invalid store ID",
 			categoryID: "test",
-			products:   []*model.Product{},
+			products:   []model.Product{},
 			err:        errSkip,
 			rcode:      http.StatusBadRequest,
 			rdata:      `{"error":"invalid category ID"}`,

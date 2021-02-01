@@ -181,10 +181,10 @@ func (mr *MockServiceMockRecorder) DeleteStore(ctx, storeID interface{}) *gomock
 }
 
 // GetProducts mocks base method
-func (m *MockService) GetProducts(ctx context.Context, categoryID int64) ([]*model.Product, error) {
+func (m *MockService) GetProducts(ctx context.Context, categoryID int64) ([]model.Product, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetProducts", ctx, categoryID)
-	ret0, _ := ret[0].([]*model.Product)
+	ret0, _ := ret[0].([]model.Product)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -196,10 +196,10 @@ func (mr *MockServiceMockRecorder) GetProducts(ctx, categoryID interface{}) *gom
 }
 
 // GetProduct mocks base method
-func (m *MockService) GetProduct(ctx context.Context, productID int64) (*model.Product, error) {
+func (m *MockService) GetProduct(ctx context.Context, productID int64) (model.Product, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetProduct", ctx, productID)
-	ret0, _ := ret[0].(*model.Product)
+	ret0, _ := ret[0].(model.Product)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -211,11 +211,12 @@ func (mr *MockServiceMockRecorder) GetProduct(ctx, productID interface{}) *gomoc
 }
 
 // CreateProduct mocks base method
-func (m *MockService) CreateProduct(ctx context.Context, product *model.Product) error {
+func (m *MockService) CreateProduct(ctx context.Context, product model.Product) (model.Product, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateProduct", ctx, product)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(model.Product)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // CreateProduct indicates an expected call of CreateProduct
@@ -225,7 +226,7 @@ func (mr *MockServiceMockRecorder) CreateProduct(ctx, product interface{}) *gomo
 }
 
 // UpdateProduct mocks base method
-func (m *MockService) UpdateProduct(ctx context.Context, product *model.Product) error {
+func (m *MockService) UpdateProduct(ctx context.Context, product model.Product) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateProduct", ctx, product)
 	ret0, _ := ret[0].(error)
