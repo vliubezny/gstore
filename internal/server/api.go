@@ -1,5 +1,10 @@
 package server
 
+import (
+	"github.com/shopspring/decimal"
+	"github.com/vliubezny/gstore/internal/model"
+)
+
 // errorResponse represents error response
 type errorResponse struct {
 	Error string `json:"error"`
@@ -8,18 +13,67 @@ type errorResponse struct {
 // category represents category object.
 type category struct {
 	ID   int64  `json:"id"`
-	Name string `json:"name"`
+	Name string `json:"name" validate:"required,gte=2,lte=80"`
+}
+
+func fromCategoryModel(c model.Category) category {
+	return category{
+		ID:   c.ID,
+		Name: c.Name,
+	}
+}
+
+func (c category) toModel() model.Category {
+	return model.Category{
+		ID:   c.ID,
+		Name: c.Name,
+	}
 }
 
 type store struct {
 	ID   int64  `json:"id"`
-	Name string `json:"name"`
+	Name string `json:"name" validate:"required,gte=2,lte=80"`
 }
 
-type item struct {
+func fromStoreModel(s *model.Store) store {
+	return store{
+		ID:   s.ID,
+		Name: s.Name,
+	}
+}
+
+func (s store) toModel() *model.Store {
+	return &model.Store{
+		ID:   s.ID,
+		Name: s.Name,
+	}
+}
+
+type product struct {
 	ID          int64  `json:"id"`
-	StoreID     int64  `json:"storeId"`
+	CategoryID  int64  `json:"categoryId"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
-	Price       int64  `json:"price"`
+}
+
+type position struct {
+	ProductID int64           `json:"productId"`
+	StoreID   int64           `json:"storeId"`
+	Price     decimal.Decimal `json:"price" validate:"gt=0"`
+}
+
+func fromPositionModel(p model.Position) position {
+	return position{
+		ProductID: p.ProductID,
+		StoreID:   p.StoreID,
+		Price:     p.Price,
+	}
+}
+
+func (p position) toModel() model.Position {
+	return model.Position{
+		ProductID: p.ProductID,
+		StoreID:   p.StoreID,
+		Price:     p.Price,
+	}
 }

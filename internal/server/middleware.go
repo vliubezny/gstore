@@ -53,3 +53,25 @@ func recoveryMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+
+// basicAuthMiddleware handles basic authentication.
+func basicAuthMiddleware(username, password string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			l := getLogger(r)
+
+			u, p, ok := r.BasicAuth()
+			if !ok {
+				writeError(l, w, http.StatusUnauthorized, "Unauthorized")
+				return
+			}
+
+			if u != username || p != password {
+				writeError(l.WithField("username", u), w, http.StatusUnauthorized, "Unauthorized")
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}

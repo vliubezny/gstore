@@ -75,3 +75,66 @@ func Test_recoveryMiddleware(t *testing.T) {
 	assert.Contains(t, log.Message, "test panic", "Missing panic message")
 	assert.Contains(t, log.Message, file, "Missing stacktrace")
 }
+
+func Test_basicAuthMiddleware(t *testing.T) {
+	testCases := []struct {
+		desc     string
+		username string
+		password string
+		rcode    int
+		rdata    string
+	}{
+		{
+			desc:     "allow valid credentials",
+			username: testUsername,
+			password: testPassword,
+			rcode:    http.StatusOK,
+			rdata:    `{"result":"OK"}`,
+		},
+		{
+			desc:     "block anonymous",
+			username: "",
+			password: "",
+			rcode:    http.StatusUnauthorized,
+			rdata:    `{"error":"Unauthorized"}`,
+		},
+		{
+			desc:     "block invalid username",
+			username: "invalid",
+			password: testPassword,
+			rcode:    http.StatusUnauthorized,
+			rdata:    `{"error":"Unauthorized"}`,
+		},
+		{
+			desc:     "block invalid password",
+			username: testUsername,
+			password: "invalid",
+			rcode:    http.StatusUnauthorized,
+			rdata:    `{"error":"Unauthorized"}`,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			logger, _ := test.NewNullLogger()
+			ctx := context.WithValue(context.Background(), loggerKey{}, logger)
+			rec := httptest.NewRecorder()
+			req := httptest.NewRequest(http.MethodPost, "/", nil).WithContext(ctx)
+
+			if tC.username != "" && tC.password != "" {
+				req.SetBasicAuth(tC.username, tC.password)
+			}
+
+			h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte(`{"result":"OK"}`))
+			})
+
+			basicAuthMiddleware(testUsername, testPassword)(h).ServeHTTP(rec, req)
+
+			body, _ := ioutil.ReadAll(rec.Result().Body)
+
+			assert.Equal(t, tC.rcode, rec.Result().StatusCode)
+			assert.JSONEq(t, tC.rdata, string(body))
+		})
+	}
+}

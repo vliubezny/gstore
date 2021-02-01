@@ -26,6 +26,9 @@ var opts = struct {
 
 	LogLevel string `long:"log.level" env:"LOG_LEVEL" default:"debug" description:"Log level" choice:"debug" choice:"info" choice:"warning" choice:"error"`
 
+	Username string `long:"auth.username" env:"AUTH_USERNAME" default:"admin" description:"username with full access"`
+	Password string `long:"auth.password" env:"AUTH_PASSWORD" default:"changeme" description:"user password"`
+
 	PostgresDSN                string `long:"postgres" env:"POSTGRES_DSN" default:"host=localhost port=5432 user=postgres password=root dbname=postgres sslmode=disable" description:"postgres dsn"`
 	PostgresMaxOpenConnections int    `long:"postgres.max_open_connections" env:"POSTGRES_MAX_OPEN_CONNECTIONS" default:"0" description:"postgres maximal open connections count, 0 means unlimited"`
 	PostgresMaxIdleConnections int    `long:"postgres.max_idle_connections" env:"POSTGRES_MAX_IDLE_CONNECTIONS" default:"5" description:"postgres maximal idle connections count"`
@@ -58,7 +61,7 @@ func main() {
 		opts.PostgresMaxIdleConnections, opts.PostgresMigrations)
 	r := chi.NewMux()
 
-	server.SetupRouter(service.New(postgres.New(db)), r)
+	server.SetupRouter(service.New(postgres.New(db)), r, opts.Username, opts.Password)
 
 	srv := http.Server{
 		Addr:    fmt.Sprintf("%s:%d", opts.Host, opts.Port),

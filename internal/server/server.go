@@ -6,6 +6,7 @@ import (
 	"runtime/debug"
 
 	"github.com/go-chi/chi"
+	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 	"github.com/vliubezny/gstore/internal/service"
 )
@@ -15,7 +16,7 @@ type server struct {
 }
 
 // SetupRouter setups routes and handlers.
-func SetupRouter(s service.Service, r chi.Router) {
+func SetupRouter(s service.Service, r chi.Router, username, password string) {
 	srv := &server{
 		s: s,
 	}
@@ -27,8 +28,28 @@ func SetupRouter(s service.Service, r chi.Router) {
 	)
 
 	r.Get("/v1/categories", srv.getCategoriesHandler)
+	r.Get("/v1/categories/{id}", srv.getCategoryHandler)
+	r.Get("/v1/categories/{id}/products", srv.getCategoryProductsHandler)
+
 	r.Get("/v1/stores", srv.getStoresHandler)
-	r.Get("/v1/stores/{id}/items", srv.getStoreItemsHandler)
+	r.Get("/v1/stores/{id}", srv.getStoreHandler)
+	r.Get("/v1/stores/{id}/positions", srv.getStorePositionsHandler)
+
+	r.Get("/v1/products/{id}/offers", srv.getProductOffersHandler)
+
+	r.Group(func(r chi.Router) {
+		r.Use(basicAuthMiddleware(username, password))
+
+		r.Post("/v1/categories", srv.createCategoryHandler)
+		r.Put("/v1/categories/{id}", srv.updateCategoryHandler)
+		r.Delete("/v1/categories/{id}", srv.deleteCategoryHandler)
+
+		r.Post("/v1/stores", srv.createStoreHandler)
+		r.Put("/v1/stores/{id}", srv.updateStoreHandler)
+		r.Delete("/v1/stores/{id}", srv.deleteStoreHandler)
+	})
+
+	decimal.MarshalJSONWithoutQuotes = true
 }
 
 func getLogger(r *http.Request) logrus.FieldLogger {
