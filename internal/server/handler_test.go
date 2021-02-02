@@ -719,6 +719,188 @@ func Test_getStorePositionsHandler(t *testing.T) {
 	}
 }
 
+func Test_setPositionHandler(t *testing.T) {
+	testCases := []struct {
+		desc      string
+		position  model.Position
+		err       error
+		storeID   string
+		productID string
+		input     string
+		rcode     int
+		rdata     string
+	}{
+		{
+			desc:      "success",
+			position:  model.Position{StoreID: 1, ProductID: 2, Price: decimal.NewFromInt(100)},
+			err:       nil,
+			storeID:   "1",
+			productID: "2",
+			input:     `{"price": 100}`,
+			rcode:     http.StatusOK,
+			rdata:     `{"productId":2, "storeId":1, "price":100}`,
+		},
+		{
+			desc:      "invalid: missing name",
+			position:  model.Position{},
+			storeID:   "1",
+			productID: "2",
+			input:     `{"price": 0}`,
+			err:       errSkip,
+			rcode:     http.StatusBadRequest,
+			rdata:     `{"error":"price must be greater than 0"}`,
+		},
+		{
+			desc:      "invalid store ID",
+			position:  model.Position{},
+			storeID:   "test",
+			productID: "2",
+			input:     `{"price": 100}`,
+			err:       errSkip,
+			rcode:     http.StatusBadRequest,
+			rdata:     `{"error":"invalid store ID"}`,
+		},
+		{
+			desc:      "invalid product ID",
+			position:  model.Position{},
+			storeID:   "1",
+			productID: "test",
+			input:     `{"price": 100}`,
+			err:       errSkip,
+			rcode:     http.StatusBadRequest,
+			rdata:     `{"error":"invalid product ID"}`,
+		},
+		{
+			desc:      "store not found",
+			position:  model.Position{StoreID: 1, ProductID: 2, Price: decimal.NewFromInt(100)},
+			storeID:   "1",
+			productID: "2",
+			input:     `{"price": 100}`,
+			err:       service.ErrUnknownStore,
+			rcode:     http.StatusNotFound,
+			rdata:     `{"error":"store not found"}`,
+		},
+		{
+			desc:      "product not found",
+			position:  model.Position{StoreID: 1, ProductID: 2, Price: decimal.NewFromInt(100)},
+			storeID:   "1",
+			productID: "2",
+			input:     `{"price": 100}`,
+			err:       service.ErrUnknownProduct,
+			rcode:     http.StatusNotFound,
+			rdata:     `{"error":"product not found"}`,
+		},
+		{
+			desc:      "internal error",
+			position:  model.Position{StoreID: 1, ProductID: 2, Price: decimal.NewFromInt(100)},
+			err:       errTest,
+			storeID:   "1",
+			productID: "2",
+			input:     `{"price": 100}`,
+			rcode:     http.StatusInternalServerError,
+			rdata:     `{"error":"internal error"}`,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			svc := service.NewMockService(ctrl)
+			if tC.err != errSkip {
+				svc.EXPECT().SetPosition(gomock.Any(), tC.position).Return(tC.err)
+			}
+
+			router := setupTestRouter(svc)
+			rec, r := newTestParameters(http.MethodPut, fmt.Sprintf("/v1/stores/%s/positions/%s", tC.storeID, tC.productID), tC.input)
+
+			router.ServeHTTP(rec, r)
+
+			body, _ := ioutil.ReadAll(rec.Result().Body)
+
+			assert.Equal(t, tC.rcode, rec.Result().StatusCode)
+			assert.JSONEq(t, tC.rdata, string(body))
+		})
+	}
+}
+
+func Test_deletePositionHandler(t *testing.T) {
+	testCases := []struct {
+		desc      string
+		storeID   string
+		productID string
+		err       error
+		rcode     int
+		rdata     string
+	}{
+		{
+			desc:      "success",
+			storeID:   "1",
+			productID: "2",
+			err:       nil,
+			rcode:     http.StatusNoContent,
+			rdata:     "",
+		},
+		{
+			desc:      "invalid store ID",
+			storeID:   "test",
+			productID: "2",
+			err:       errSkip,
+			rcode:     http.StatusBadRequest,
+			rdata:     `{"error":"invalid store ID"}`,
+		},
+		{
+			desc:      "invalid product ID",
+			storeID:   "1",
+			productID: "test",
+			err:       errSkip,
+			rcode:     http.StatusBadRequest,
+			rdata:     `{"error":"invalid product ID"}`,
+		},
+		{
+			desc:      "not found",
+			storeID:   "1",
+			productID: "2",
+			err:       service.ErrNotFound,
+			rcode:     http.StatusNotFound,
+			rdata:     `{"error":"product not found"}`,
+		},
+		{
+			desc:      "internal error",
+			storeID:   "1",
+			productID: "2",
+			err:       errTest,
+			rcode:     http.StatusInternalServerError,
+			rdata:     `{"error":"internal error"}`,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			svc := service.NewMockService(ctrl)
+			if tC.err != errSkip {
+				svc.EXPECT().DeletePosition(gomock.Any(), int64(2), int64(1)).Return(tC.err)
+			}
+
+			router := setupTestRouter(svc)
+			rec, r := newTestParameters(http.MethodDelete, fmt.Sprintf("/v1/stores/%s/positions/%s", tC.storeID, tC.productID), "")
+
+			router.ServeHTTP(rec, r)
+
+			body, _ := ioutil.ReadAll(rec.Result().Body)
+
+			assert.Equal(t, tC.rcode, rec.Result().StatusCode)
+			if tC.rdata == "" {
+				assert.Empty(t, string(body))
+			} else {
+				assert.JSONEq(t, tC.rdata, string(body))
+			}
+		})
+	}
+}
+
 func Test_getCategoryProductsHandler(t *testing.T) {
 	testCases := []struct {
 		desc       string

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"runtime/debug"
+	"strconv"
 
 	"github.com/go-chi/chi"
 	"github.com/shopspring/decimal"
@@ -52,6 +53,9 @@ func SetupRouter(s service.Service, r chi.Router, username, password string) {
 		r.Post("/v1/stores", srv.createStoreHandler)
 		r.Put("/v1/stores/{id}", srv.updateStoreHandler)
 		r.Delete("/v1/stores/{id}", srv.deleteStoreHandler)
+
+		r.Put("/v1/stores/{id}/positions/{productId}", srv.satPositionHandler)
+		r.Delete("/v1/stores/{id}/positions/{productId}", srv.deletePositionHandler)
 	})
 
 	decimal.MarshalJSONWithoutQuotes = true
@@ -59,6 +63,11 @@ func SetupRouter(s service.Service, r chi.Router, username, password string) {
 
 func getLogger(r *http.Request) logrus.FieldLogger {
 	return r.Context().Value(loggerKey{}).(logrus.FieldLogger)
+}
+
+func getIDFromURL(r *http.Request, key string) (int64, error) {
+	id := chi.URLParam(r, key)
+	return strconv.ParseInt(id, 10, 64)
 }
 
 func writeError(l logrus.FieldLogger, w http.ResponseWriter, code int, message string) {
