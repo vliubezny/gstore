@@ -35,6 +35,7 @@ func SetupRouter(s service.Service, r chi.Router, username, password string) {
 	r.Get("/v1/stores/{id}", srv.getStoreHandler)
 	r.Get("/v1/stores/{id}/positions", srv.getStorePositionsHandler)
 
+	r.Get("/v1/products/{id}", srv.getProductHandler)
 	r.Get("/v1/products/{id}/offers", srv.getProductOffersHandler)
 
 	r.Group(func(r chi.Router) {
@@ -43,6 +44,10 @@ func SetupRouter(s service.Service, r chi.Router, username, password string) {
 		r.Post("/v1/categories", srv.createCategoryHandler)
 		r.Put("/v1/categories/{id}", srv.updateCategoryHandler)
 		r.Delete("/v1/categories/{id}", srv.deleteCategoryHandler)
+
+		r.Post("/v1/products", srv.createProductHandler)
+		r.Put("/v1/products/{id}", srv.updateProductHandler)
+		r.Delete("/v1/products/{id}", srv.deleteProductHandler)
 
 		r.Post("/v1/stores", srv.createStoreHandler)
 		r.Put("/v1/stores/{id}", srv.updateStoreHandler)

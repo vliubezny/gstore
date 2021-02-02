@@ -788,6 +788,291 @@ func Test_getCategoryProductsHandler(t *testing.T) {
 	}
 }
 
+func Test_getProductHandler(t *testing.T) {
+	testCases := []struct {
+		desc    string
+		product model.Product
+		id      string
+		err     error
+		rcode   int
+		rdata   string
+	}{
+		{
+			desc:    "success",
+			product: model.Product{ID: 1, CategoryID: 2, Name: "Test1", Description: "ABC"},
+			id:      "1",
+			err:     nil,
+			rcode:   http.StatusOK,
+			rdata:   `{"id":1, "categoryId":2, "name":"Test1", "description":"ABC"}`,
+		},
+		{
+			desc:    "invalid product ID",
+			id:      "test",
+			product: model.Product{},
+			err:     errSkip,
+			rcode:   http.StatusBadRequest,
+			rdata:   `{"error":"invalid product ID"}`,
+		},
+		{
+			desc:    "not found",
+			id:      "1",
+			product: model.Product{},
+			err:     service.ErrNotFound,
+			rcode:   http.StatusNotFound,
+			rdata:   `{"error":"product not found"}`,
+		},
+		{
+			desc:    "internal error",
+			product: model.Product{},
+			id:      "1",
+			err:     errTest,
+			rcode:   http.StatusInternalServerError,
+			rdata:   `{"error":"internal error"}`,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			svc := service.NewMockService(ctrl)
+			if tC.err != errSkip {
+				svc.EXPECT().GetProduct(gomock.Any(), int64(1)).Return(tC.product, tC.err)
+			}
+
+			router := setupTestRouter(svc)
+			rec, r := newTestParameters(http.MethodGet, fmt.Sprintf("/v1/products/%s", tC.id), "")
+
+			router.ServeHTTP(rec, r)
+
+			body, _ := ioutil.ReadAll(rec.Result().Body)
+
+			assert.Equal(t, tC.rcode, rec.Result().StatusCode)
+			assert.JSONEq(t, tC.rdata, string(body))
+		})
+	}
+}
+
+func Test_createProductHandler(t *testing.T) {
+	testCases := []struct {
+		desc    string
+		product model.Product
+		err     error
+		input   string
+		rcode   int
+		rdata   string
+	}{
+		{
+			desc:    "success",
+			product: model.Product{CategoryID: 2, Name: "Test1", Description: "ABC"},
+			err:     nil,
+			input:   `{"categoryId":2, "name":"Test1", "description":"ABC"}`,
+			rcode:   http.StatusOK,
+			rdata:   `{"id":1, "categoryId":2, "name":"Test1", "description":"ABC"}`,
+		},
+		{
+			desc:    "invalid: missing name",
+			product: model.Product{},
+			input:   `{"categoryId":2, "description":"ABC"}`,
+			err:     errSkip,
+			rcode:   http.StatusBadRequest,
+			rdata:   `{"error":"name is a required field"}`,
+		},
+		{
+			desc:    "invalid: unknown category",
+			product: model.Product{CategoryID: 2, Name: "Test1", Description: "ABC"},
+			err:     service.ErrUnknownCategory,
+			input:   `{"categoryId":2, "name":"Test1", "description":"ABC"}`,
+			rcode:   http.StatusBadRequest,
+			rdata:   `{"error":"unknown category"}`,
+		},
+		{
+			desc:    "internal error",
+			product: model.Product{CategoryID: 2, Name: "Test1", Description: "ABC"},
+			err:     errTest,
+			input:   `{"categoryId":2, "name":"Test1", "description":"ABC"}`,
+			rcode:   http.StatusInternalServerError,
+			rdata:   `{"error":"internal error"}`,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			svc := service.NewMockService(ctrl)
+			if tC.err != errSkip {
+				svc.EXPECT().CreateProduct(gomock.Any(), tC.product).DoAndReturn(func(_ context.Context, p model.Product) (model.Product, error) {
+					p.ID = 1
+					return p, tC.err
+				})
+			}
+
+			router := setupTestRouter(svc)
+			rec, r := newTestParameters(http.MethodPost, "/v1/products", tC.input)
+
+			router.ServeHTTP(rec, r)
+
+			body, _ := ioutil.ReadAll(rec.Result().Body)
+
+			assert.Equal(t, tC.rcode, rec.Result().StatusCode)
+			assert.JSONEq(t, tC.rdata, string(body))
+		})
+	}
+}
+
+func Test_updateProductHandler(t *testing.T) {
+	testCases := []struct {
+		desc    string
+		product model.Product
+		err     error
+		id      string
+		input   string
+		rcode   int
+		rdata   string
+	}{
+		{
+			desc:    "success",
+			product: model.Product{ID: 1, CategoryID: 2, Name: "Test1", Description: "ABC"},
+			err:     nil,
+			id:      "1",
+			input:   `{"categoryId":2, "name":"Test1", "description":"ABC"}`,
+			rcode:   http.StatusOK,
+			rdata:   `{"id":1, "categoryId":2, "name":"Test1", "description":"ABC"}`,
+		},
+		{
+			desc:    "invalid: missing name",
+			product: model.Product{},
+			id:      "1",
+			input:   `{"categoryId":2, "description":"ABC"}`,
+			err:     errSkip,
+			rcode:   http.StatusBadRequest,
+			rdata:   `{"error":"name is a required field"}`,
+		},
+		{
+			desc:    "invalid product ID",
+			product: model.Product{},
+			id:      "test",
+			input:   `{"categoryId":2, "name":"Test1", "description":"ABC"}`,
+			err:     errSkip,
+			rcode:   http.StatusBadRequest,
+			rdata:   `{"error":"invalid product ID"}`,
+		},
+		{
+			desc:    "not found",
+			product: model.Product{ID: 1, CategoryID: 2, Name: "Test1", Description: "ABC"},
+			id:      "1",
+			input:   `{"categoryId":2, "name":"Test1", "description":"ABC"}`,
+			err:     service.ErrNotFound,
+			rcode:   http.StatusNotFound,
+			rdata:   `{"error":"product not found"}`,
+		},
+		{
+			desc:    "invalid: unknown category",
+			product: model.Product{ID: 1, CategoryID: 2, Name: "Test1", Description: "ABC"},
+			id:      "1",
+			input:   `{"categoryId":2, "name":"Test1", "description":"ABC"}`,
+			err:     service.ErrUnknownCategory,
+			rcode:   http.StatusBadRequest,
+			rdata:   `{"error":"unknown category"}`,
+		},
+		{
+			desc:    "internal error",
+			product: model.Product{ID: 1, CategoryID: 2, Name: "Test1", Description: "ABC"},
+			err:     errTest,
+			id:      "1",
+			input:   `{"categoryId":2, "name":"Test1", "description":"ABC"}`,
+			rcode:   http.StatusInternalServerError,
+			rdata:   `{"error":"internal error"}`,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			svc := service.NewMockService(ctrl)
+			if tC.err != errSkip {
+				svc.EXPECT().UpdateProduct(gomock.Any(), tC.product).Return(tC.err)
+			}
+
+			router := setupTestRouter(svc)
+			rec, r := newTestParameters(http.MethodPut, fmt.Sprintf("/v1/products/%s", tC.id), tC.input)
+
+			router.ServeHTTP(rec, r)
+
+			body, _ := ioutil.ReadAll(rec.Result().Body)
+
+			assert.Equal(t, tC.rcode, rec.Result().StatusCode)
+			assert.JSONEq(t, tC.rdata, string(body))
+		})
+	}
+}
+
+func Test_deleteProductHandler(t *testing.T) {
+	testCases := []struct {
+		desc  string
+		id    string
+		err   error
+		rcode int
+		rdata string
+	}{
+		{
+			desc:  "success",
+			id:    "1",
+			err:   nil,
+			rcode: http.StatusNoContent,
+			rdata: "",
+		},
+		{
+			desc:  "invalid product ID",
+			id:    "test",
+			err:   errSkip,
+			rcode: http.StatusBadRequest,
+			rdata: `{"error":"invalid product ID"}`,
+		},
+		{
+			desc:  "not found",
+			id:    "1",
+			err:   service.ErrNotFound,
+			rcode: http.StatusNotFound,
+			rdata: `{"error":"product not found"}`,
+		},
+		{
+			desc:  "internal error",
+			id:    "1",
+			err:   errTest,
+			rcode: http.StatusInternalServerError,
+			rdata: `{"error":"internal error"}`,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			svc := service.NewMockService(ctrl)
+			if tC.err != errSkip {
+				svc.EXPECT().DeleteProduct(gomock.Any(), int64(1)).Return(tC.err)
+			}
+
+			router := setupTestRouter(svc)
+			rec, r := newTestParameters(http.MethodDelete, fmt.Sprintf("/v1/products/%s", tC.id), "")
+
+			router.ServeHTTP(rec, r)
+
+			body, _ := ioutil.ReadAll(rec.Result().Body)
+
+			assert.Equal(t, tC.rcode, rec.Result().StatusCode)
+			if tC.rdata == "" {
+				assert.Empty(t, string(body))
+			} else {
+				assert.JSONEq(t, tC.rdata, string(body))
+			}
+		})
+	}
+}
+
 func Test_getProductOffersHandler(t *testing.T) {
 	testCases := []struct {
 		desc      string

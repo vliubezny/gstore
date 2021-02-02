@@ -312,6 +312,120 @@ func (s *server) getCategoryProductsHandler(w http.ResponseWriter, r *http.Reque
 	writeOK(l, w, resp)
 }
 
+func (s *server) getProductHandler(w http.ResponseWriter, r *http.Request) {
+	l := getLogger(r)
+
+	id := chi.URLParam(r, "id")
+	productID, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		writeError(l.WithError(err), w, http.StatusBadRequest, "invalid product ID")
+		return
+	}
+
+	p, err := s.s.GetProduct(r.Context(), productID)
+	if err != nil {
+		if errors.Is(err, service.ErrNotFound) {
+			writeError(l.WithError(err), w, http.StatusNotFound, "product not found")
+			return
+		}
+
+		writeInternalError(l.WithError(err), w, "fail to get product")
+		return
+	}
+
+	writeOK(l, w, fromProductModel(p))
+}
+
+func (s *server) createProductHandler(w http.ResponseWriter, r *http.Request) {
+	l := getLogger(r)
+
+	var req product
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(l.WithError(err), w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := validate(&req); err != nil {
+		writeError(l.WithError(err), w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	p, err := s.s.CreateProduct(r.Context(), req.toModel())
+	if err != nil {
+		if errors.Is(err, service.ErrUnknownCategory) {
+			writeError(l.WithError(err), w, http.StatusBadRequest, "unknown category")
+		} else {
+			writeInternalError(l.WithError(err), w, "fail to create product")
+		}
+		return
+	}
+
+	writeOK(l, w, fromProductModel(p))
+}
+
+func (s *server) updateProductHandler(w http.ResponseWriter, r *http.Request) {
+	l := getLogger(r)
+
+	id := chi.URLParam(r, "id")
+	productID, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		writeError(l.WithError(err), w, http.StatusBadRequest, "invalid product ID")
+		return
+	}
+
+	var req product
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(l.WithError(err), w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := validate(&req); err != nil {
+		writeError(l.WithError(err), w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	p := req.toModel()
+	p.ID = productID
+
+	if err := s.s.UpdateProduct(r.Context(), p); err != nil {
+		switch {
+		case errors.Is(err, service.ErrNotFound):
+			writeError(l.WithError(err), w, http.StatusNotFound, "product not found")
+		case errors.Is(err, service.ErrUnknownCategory):
+			writeError(l.WithError(err), w, http.StatusBadRequest, "unknown category")
+		default:
+			writeInternalError(l.WithError(err), w, "fail to update product")
+		}
+		return
+	}
+
+	writeOK(l, w, fromProductModel(p))
+}
+
+func (s *server) deleteProductHandler(w http.ResponseWriter, r *http.Request) {
+	l := getLogger(r)
+
+	id := chi.URLParam(r, "id")
+	productID, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		writeError(l.WithError(err), w, http.StatusBadRequest, "invalid product ID")
+		return
+	}
+
+	err = s.s.DeleteProduct(r.Context(), productID)
+	if err != nil {
+		if errors.Is(err, service.ErrNotFound) {
+			writeError(l.WithError(err), w, http.StatusNotFound, "product not found")
+			return
+		}
+
+		writeInternalError(l.WithError(err), w, "fail to delete product")
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (s *server) getProductOffersHandler(w http.ResponseWriter, r *http.Request) {
 	l := getLogger(r)
 
