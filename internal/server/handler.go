@@ -278,7 +278,7 @@ func (s *server) getStorePositionsHandler(w http.ResponseWriter, r *http.Request
 	writeOK(l, w, resp)
 }
 
-func (s *server) satPositionHandler(w http.ResponseWriter, r *http.Request) {
+func (s *server) setPositionHandler(w http.ResponseWriter, r *http.Request) {
 	l := getLogger(r)
 
 	storeID, err := getIDFromURL(r, "id")

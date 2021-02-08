@@ -54,7 +54,7 @@ func SetupRouter(s service.Service, r chi.Router, username, password string) {
 		r.Put("/v1/stores/{id}", srv.updateStoreHandler)
 		r.Delete("/v1/stores/{id}", srv.deleteStoreHandler)
 
-		r.Put("/v1/stores/{id}/positions/{productId}", srv.satPositionHandler)
+		r.Put("/v1/stores/{id}/positions/{productId}", srv.setPositionHandler)
 		r.Delete("/v1/stores/{id}/positions/{productId}", srv.deletePositionHandler)
 	})
 
