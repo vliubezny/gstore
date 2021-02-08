@@ -5,18 +5,21 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/lib/pq"
 	"github.com/vliubezny/gstore/internal/model"
 	"github.com/vliubezny/gstore/internal/storage"
 )
 
-func (p pg) GetProducts(ctx context.Context, categoryID int64) ([]*model.Product, error) {
+const categoryIDFKConstraint = "product_category_id_fkey"
+
+func (p pg) GetProducts(ctx context.Context, categoryID int64) ([]model.Product, error) {
 	var products []product
 
 	if err := p.db.SelectContext(ctx, &products, "SELECT * FROM product WHERE category_id=$1", categoryID); err != nil {
 		return nil, fmt.Errorf("failed to get products: %w", err)
 	}
 
-	data := make([]*model.Product, len(products))
+	data := make([]model.Product, len(products))
 	for i, d := range products {
 		data[i] = d.toModel()
 	}
@@ -24,33 +27,35 @@ func (p pg) GetProducts(ctx context.Context, categoryID int64) ([]*model.Product
 	return data, nil
 }
 
-func (p pg) GetProduct(ctx context.Context, productID int64) (*model.Product, error) {
+func (p pg) GetProduct(ctx context.Context, productID int64) (model.Product, error) {
 	var prod product
 	err := p.db.GetContext(ctx, &prod, "SELECT * FROM product WHERE id = $1", productID)
 
 	if err == sql.ErrNoRows {
-		return nil, storage.ErrNotFound
+		return model.Product{}, storage.ErrNotFound
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to get product: %w", err)
+		return model.Product{}, fmt.Errorf("failed to get product: %w", err)
 	}
 
 	return prod.toModel(), nil
 }
 
-func (p pg) CreateProduct(ctx context.Context, product *model.Product) error {
-	var id int64
-	if err := p.db.GetContext(ctx, &id, "INSERT INTO product (category_id, name, description) VALUES ($1, $2, $3) RETURNING id",
-		product.CategoryID, product.Name, product.Description); err != nil {
-		return fmt.Errorf("failed to create product: %w", err)
-	}
+func (p pg) CreateProduct(ctx context.Context, product model.Product) (model.Product, error) {
+	if err := p.db.GetContext(ctx, &product.ID, `
+			INSERT INTO product (category_id, name, description) VALUES ($1, $2, $3) RETURNING id
+		`, product.CategoryID, product.Name, product.Description); err != nil {
 
-	product.ID = id
-	return nil
+		if err, ok := err.(*pq.Error); ok && err.Constraint == categoryIDFKConstraint {
+			return model.Product{}, storage.ErrUnknownCategory
+		}
+		return model.Product{}, fmt.Errorf("failed to create product: %w", err)
+	}
+	return product, nil
 }
 
-func (p pg) UpdateProduct(ctx context.Context, product *model.Product) error {
+func (p pg) UpdateProduct(ctx context.Context, product model.Product) error {
 	res, err := p.db.ExecContext(ctx, `
 		UPDATE product SET
 		category_id =$2,
@@ -60,6 +65,9 @@ func (p pg) UpdateProduct(ctx context.Context, product *model.Product) error {
 	`, product.ID, product.CategoryID, product.Name, product.Description)
 
 	if err != nil {
+		if err, ok := err.(*pq.Error); ok && err.Constraint == categoryIDFKConstraint {
+			return storage.ErrUnknownCategory
+		}
 		return fmt.Errorf("failed to update product: %w", err)
 	}
 

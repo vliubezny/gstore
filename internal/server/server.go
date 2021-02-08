@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"runtime/debug"
+	"strconv"
 
 	"github.com/go-chi/chi"
 	"github.com/shopspring/decimal"
@@ -35,6 +36,7 @@ func SetupRouter(s service.Service, r chi.Router, username, password string) {
 	r.Get("/v1/stores/{id}", srv.getStoreHandler)
 	r.Get("/v1/stores/{id}/positions", srv.getStorePositionsHandler)
 
+	r.Get("/v1/products/{id}", srv.getProductHandler)
 	r.Get("/v1/products/{id}/offers", srv.getProductOffersHandler)
 
 	r.Group(func(r chi.Router) {
@@ -44,9 +46,16 @@ func SetupRouter(s service.Service, r chi.Router, username, password string) {
 		r.Put("/v1/categories/{id}", srv.updateCategoryHandler)
 		r.Delete("/v1/categories/{id}", srv.deleteCategoryHandler)
 
+		r.Post("/v1/products", srv.createProductHandler)
+		r.Put("/v1/products/{id}", srv.updateProductHandler)
+		r.Delete("/v1/products/{id}", srv.deleteProductHandler)
+
 		r.Post("/v1/stores", srv.createStoreHandler)
 		r.Put("/v1/stores/{id}", srv.updateStoreHandler)
 		r.Delete("/v1/stores/{id}", srv.deleteStoreHandler)
+
+		r.Put("/v1/stores/{id}/positions/{productId}", srv.setPositionHandler)
+		r.Delete("/v1/stores/{id}/positions/{productId}", srv.deletePositionHandler)
 	})
 
 	decimal.MarshalJSONWithoutQuotes = true
@@ -54,6 +63,11 @@ func SetupRouter(s service.Service, r chi.Router, username, password string) {
 
 func getLogger(r *http.Request) logrus.FieldLogger {
 	return r.Context().Value(loggerKey{}).(logrus.FieldLogger)
+}
+
+func getIDFromURL(r *http.Request, key string) (int64, error) {
+	id := chi.URLParam(r, key)
+	return strconv.ParseInt(id, 10, 64)
 }
 
 func writeError(l logrus.FieldLogger, w http.ResponseWriter, code int, message string) {

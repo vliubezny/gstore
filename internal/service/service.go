@@ -15,6 +15,9 @@ var (
 	// ErrNotFound states that object(s) was not found.
 	ErrNotFound = errors.New("not found")
 
+	// ErrUnknownCategory states that category is unknown.
+	ErrUnknownCategory = errors.New("category is unknown")
+
 	// ErrUnknownStore states that store is unknown.
 	ErrUnknownStore = errors.New("store is unknown")
 
@@ -40,31 +43,31 @@ type Service interface {
 	DeleteCategory(ctx context.Context, categoryID int64) error
 
 	// GetStores returns slice of stores.
-	GetStores(ctx context.Context) ([]*model.Store, error)
+	GetStores(ctx context.Context) ([]model.Store, error)
 
 	// GetStore returns a product store by ID.
-	GetStore(ctx context.Context, storeID int64) (*model.Store, error)
+	GetStore(ctx context.Context, storeID int64) (model.Store, error)
 
 	// CreateStore creates new store.
-	CreateStore(ctx context.Context, store *model.Store) error
+	CreateStore(ctx context.Context, store model.Store) (model.Store, error)
 
 	// UpdateStore updates store.
-	UpdateStore(ctx context.Context, store *model.Store) error
+	UpdateStore(ctx context.Context, store model.Store) error
 
 	// DeleteStore deletes store from storage.
 	DeleteStore(ctx context.Context, storeID int64) error
 
 	// GetProducts returns slice of products in category.
-	GetProducts(ctx context.Context, categoryID int64) ([]*model.Product, error)
+	GetProducts(ctx context.Context, categoryID int64) ([]model.Product, error)
 
 	// GetProduct returns a product by ID.
-	GetProduct(ctx context.Context, productID int64) (*model.Product, error)
+	GetProduct(ctx context.Context, productID int64) (model.Product, error)
 
 	// CreateProduct creates new product.
-	CreateProduct(ctx context.Context, product *model.Product) error
+	CreateProduct(ctx context.Context, product model.Product) (model.Product, error)
 
 	// UpdateProduct updates product.
-	UpdateProduct(ctx context.Context, product *model.Product) error
+	UpdateProduct(ctx context.Context, product model.Product) error
 
 	// DeleteProduct deletes product.
 	DeleteProduct(ctx context.Context, productID int64) error
@@ -140,7 +143,7 @@ func (s *service) DeleteCategory(ctx context.Context, categoryID int64) error {
 	return nil
 }
 
-func (s *service) GetStores(ctx context.Context) ([]*model.Store, error) {
+func (s *service) GetStores(ctx context.Context) ([]model.Store, error) {
 	stores, err := s.s.GetStores(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get stores: %w", err)
@@ -148,25 +151,26 @@ func (s *service) GetStores(ctx context.Context) ([]*model.Store, error) {
 	return stores, nil
 }
 
-func (s *service) GetStore(ctx context.Context, storeID int64) (*model.Store, error) {
+func (s *service) GetStore(ctx context.Context, storeID int64) (model.Store, error) {
 	store, err := s.s.GetStore(ctx, storeID)
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
-			return nil, ErrNotFound
+			return model.Store{}, ErrNotFound
 		}
-		return nil, fmt.Errorf("failed to get store: %w", err)
+		return model.Store{}, fmt.Errorf("failed to get store: %w", err)
 	}
 	return store, nil
 }
 
-func (s *service) CreateStore(ctx context.Context, store *model.Store) error {
-	if err := s.s.CreateStore(ctx, store); err != nil {
-		return fmt.Errorf("failed to create store: %w", err)
+func (s *service) CreateStore(ctx context.Context, store model.Store) (model.Store, error) {
+	store, err := s.s.CreateStore(ctx, store)
+	if err != nil {
+		return model.Store{}, fmt.Errorf("failed to create store: %w", err)
 	}
-	return nil
+	return store, nil
 }
 
-func (s *service) UpdateStore(ctx context.Context, store *model.Store) error {
+func (s *service) UpdateStore(ctx context.Context, store model.Store) error {
 	if err := s.s.UpdateStore(ctx, store); err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
 			return ErrNotFound
@@ -186,7 +190,7 @@ func (s *service) DeleteStore(ctx context.Context, storeID int64) error {
 	return nil
 }
 
-func (s *service) GetProducts(ctx context.Context, categoryID int64) ([]*model.Product, error) {
+func (s *service) GetProducts(ctx context.Context, categoryID int64) ([]model.Product, error) {
 	products, err := s.s.GetProducts(ctx, categoryID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get products: %w", err)
@@ -194,27 +198,34 @@ func (s *service) GetProducts(ctx context.Context, categoryID int64) ([]*model.P
 	return products, nil
 }
 
-func (s *service) GetProduct(ctx context.Context, productID int64) (*model.Product, error) {
+func (s *service) GetProduct(ctx context.Context, productID int64) (model.Product, error) {
 	product, err := s.s.GetProduct(ctx, productID)
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
-			return nil, ErrNotFound
+			return model.Product{}, ErrNotFound
 		}
-		return nil, fmt.Errorf("failed to get product: %w", err)
+		return model.Product{}, fmt.Errorf("failed to get product: %w", err)
 	}
 	return product, nil
 }
 
-func (s *service) CreateProduct(ctx context.Context, product *model.Product) error {
-	if err := s.s.CreateProduct(ctx, product); err != nil {
-		return fmt.Errorf("failed to create product: %w", err)
+func (s *service) CreateProduct(ctx context.Context, product model.Product) (model.Product, error) {
+	product, err := s.s.CreateProduct(ctx, product)
+	if err != nil {
+		if errors.Is(err, storage.ErrUnknownCategory) {
+			return model.Product{}, ErrUnknownCategory
+		}
+		return model.Product{}, fmt.Errorf("failed to create product: %w", err)
 	}
-	return nil
+	return product, nil
 }
 
-func (s *service) UpdateProduct(ctx context.Context, product *model.Product) error {
+func (s *service) UpdateProduct(ctx context.Context, product model.Product) error {
 	if err := s.s.UpdateProduct(ctx, product); err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
+		switch {
+		case errors.Is(err, storage.ErrUnknownCategory):
+			return ErrUnknownCategory
+		case errors.Is(err, storage.ErrNotFound):
 			return ErrNotFound
 		}
 		return fmt.Errorf("failed to update product: %w", err)

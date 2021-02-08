@@ -22,8 +22,8 @@ type store struct {
 	Name string `db:"name"`
 }
 
-func (s store) toModel() *model.Store {
-	return &model.Store{
+func (s store) toModel() model.Store {
+	return model.Store{
 		ID:   s.ID,
 		Name: s.Name,
 	}
@@ -36,8 +36,8 @@ type product struct {
 	Description string `db:"description"`
 }
 
-func (i product) toModel() *model.Product {
-	return &model.Product{
+func (i product) toModel() model.Product {
+	return model.Product{
 		ID:          i.ID,
 		CategoryID:  i.CategoryID,
 		Name:        i.Name,

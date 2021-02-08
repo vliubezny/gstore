@@ -35,15 +35,15 @@ type store struct {
 	Name string `json:"name" validate:"required,gte=2,lte=80"`
 }
 
-func fromStoreModel(s *model.Store) store {
+func fromStoreModel(s model.Store) store {
 	return store{
 		ID:   s.ID,
 		Name: s.Name,
 	}
 }
 
-func (s store) toModel() *model.Store {
-	return &model.Store{
+func (s store) toModel() model.Store {
+	return model.Store{
 		ID:   s.ID,
 		Name: s.Name,
 	}
@@ -51,9 +51,27 @@ func (s store) toModel() *model.Store {
 
 type product struct {
 	ID          int64  `json:"id"`
-	CategoryID  int64  `json:"categoryId"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	CategoryID  int64  `json:"categoryId" validate:"required"`
+	Name        string `json:"name" validate:"required,gte=3,lte=160"`
+	Description string `json:"description" validate:"required"`
+}
+
+func fromProductModel(p model.Product) product {
+	return product{
+		ID:          p.ID,
+		CategoryID:  p.CategoryID,
+		Name:        p.Name,
+		Description: p.Description,
+	}
+}
+
+func (p product) toModel() model.Product {
+	return model.Product{
+		ID:          p.ID,
+		CategoryID:  p.CategoryID,
+		Name:        p.Name,
+		Description: p.Description,
+	}
 }
 
 type position struct {
