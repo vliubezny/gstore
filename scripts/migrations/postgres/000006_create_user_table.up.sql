@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS store_user (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(120) NOT NULL UNIQUE,
+    password_hash VARCHAR(60) NOT NULL,
+    is_admin BOOLEAN NOT NULL
+);

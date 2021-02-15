@@ -21,6 +21,9 @@ var (
 
 	// ErrUnknownProduct states that product is unknown.
 	ErrUnknownProduct = errors.New("product is unknown")
+
+	// ErrEmailIsTaken states that email address is taken.
+	ErrEmailIsTaken = errors.New("email is taken")
 )
 
 // Storage provides methods to interact with data storage.
@@ -81,4 +84,13 @@ type Storage interface {
 
 	// DeletePosition deletes position.
 	DeletePosition(ctx context.Context, productID, storeID int64) error
+}
+
+// UserStorage provides methods to interact with user storage.
+type UserStorage interface {
+	// CreateUser creates new user.
+	CreateUser(ctx context.Context, user model.User) (model.User, error)
+
+	// GetUserByEmail returns user from storage by email.
+	GetUserByEmail(ctx context.Context, email string) (model.User, error)
 }

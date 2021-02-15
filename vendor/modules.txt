@@ -15,6 +15,9 @@ github.com/containerd/continuity/sysx
 # github.com/davecgh/go-spew v1.1.1
 ## explicit
 github.com/davecgh/go-spew/spew
+# github.com/dgrijalva/jwt-go v3.2.0+incompatible
+## explicit
+github.com/dgrijalva/jwt-go
 # github.com/docker/distribution v2.7.1+incompatible
 github.com/docker/distribution/digestset
 github.com/docker/distribution/reference
@@ -138,7 +141,10 @@ github.com/testcontainers/testcontainers-go/wait
 # github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce
 ## explicit
 github.com/tomasen/realip
-# golang.org/x/crypto v0.0.0-20200709230013-948cd5f35899
+# golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
+## explicit
+golang.org/x/crypto/bcrypt
+golang.org/x/crypto/blowfish
 golang.org/x/crypto/sha3
 # golang.org/x/net v0.0.0-20201029221708-28c70e62bb1d
 golang.org/x/net/internal/socks

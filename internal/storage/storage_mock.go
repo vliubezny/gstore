@@ -310,3 +310,56 @@ func (mr *MockStorageMockRecorder) DeletePosition(ctx, productID, storeID interf
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePosition", reflect.TypeOf((*MockStorage)(nil).DeletePosition), ctx, productID, storeID)
 }
+
+// MockUserStorage is a mock of UserStorage interface
+type MockUserStorage struct {
+	ctrl     *gomock.Controller
+	recorder *MockUserStorageMockRecorder
+}
+
+// MockUserStorageMockRecorder is the mock recorder for MockUserStorage
+type MockUserStorageMockRecorder struct {
+	mock *MockUserStorage
+}
+
+// NewMockUserStorage creates a new mock instance
+func NewMockUserStorage(ctrl *gomock.Controller) *MockUserStorage {
+	mock := &MockUserStorage{ctrl: ctrl}
+	mock.recorder = &MockUserStorageMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockUserStorage) EXPECT() *MockUserStorageMockRecorder {
+	return m.recorder
+}
+
+// CreateUser mocks base method
+func (m *MockUserStorage) CreateUser(ctx context.Context, user model.User) (model.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateUser", ctx, user)
+	ret0, _ := ret[0].(model.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateUser indicates an expected call of CreateUser
+func (mr *MockUserStorageMockRecorder) CreateUser(ctx, user interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockUserStorage)(nil).CreateUser), ctx, user)
+}
+
+// GetUserByEmail mocks base method
+func (m *MockUserStorage) GetUserByEmail(ctx context.Context, email string) (model.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserByEmail", ctx, email)
+	ret0, _ := ret[0].(model.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserByEmail indicates an expected call of GetUserByEmail
+func (mr *MockUserStorageMockRecorder) GetUserByEmail(ctx, email interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByEmail", reflect.TypeOf((*MockUserStorage)(nil).GetUserByEmail), ctx, email)
+}
