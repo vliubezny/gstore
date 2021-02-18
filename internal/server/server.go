@@ -9,17 +9,20 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
+	"github.com/vliubezny/gstore/internal/auth"
 	"github.com/vliubezny/gstore/internal/service"
 )
 
 type server struct {
 	s service.Service
+	a auth.Service
 }
 
 // SetupRouter setups routes and handlers.
-func SetupRouter(s service.Service, r chi.Router, username, password string) {
+func SetupRouter(s service.Service, a auth.Service, r chi.Router, username, password string) {
 	srv := &server{
 		s: s,
+		a: a,
 	}
 
 	r.Use(
@@ -27,6 +30,8 @@ func SetupRouter(s service.Service, r chi.Router, username, password string) {
 		setContentTypeMiddleware(contentTypeJSON),
 		recoveryMiddleware,
 	)
+
+	r.Post("/v1/register", srv.registerHandler)
 
 	r.Get("/v1/categories", srv.getCategoriesHandler)
 	r.Get("/v1/categories/{id}", srv.getCategoryHandler)

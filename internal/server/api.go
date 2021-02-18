@@ -95,3 +95,22 @@ func (p position) toModel() model.Position {
 		Price:     p.Price,
 	}
 }
+
+type registrationForm struct {
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,gte=8,lte=160"`
+}
+
+type user struct {
+	ID      int64  `json:"id"`
+	Email   string `json:"email"`
+	IsAdmin bool   `json:"isAdmin"`
+}
+
+func fromUserModel(u model.User) user {
+	return user{
+		ID:      u.ID,
+		Email:   u.Email,
+		IsAdmin: u.IsAdmin,
+	}
+}

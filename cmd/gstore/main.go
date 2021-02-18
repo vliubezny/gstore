@@ -12,8 +12,10 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/jessevdk/go-flags"
 	"github.com/sirupsen/logrus"
+	"github.com/vliubezny/gstore/internal/auth"
 	"github.com/vliubezny/gstore/internal/server"
 	"github.com/vliubezny/gstore/internal/service"
+	"github.com/vliubezny/gstore/internal/storage"
 	"github.com/vliubezny/gstore/internal/storage/postgres"
 	"golang.org/x/sync/errgroup"
 )
@@ -28,6 +30,8 @@ var opts = struct {
 
 	Username string `long:"auth.username" env:"AUTH_USERNAME" default:"admin" description:"username with full access"`
 	Password string `long:"auth.password" env:"AUTH_PASSWORD" default:"changeme" description:"user password"`
+
+	SignKey string `long:"auth.signkey" env:"AUTH_SIGN_KEY" default:"changeme" description:"sign key for JWT"`
 
 	PostgresDSN                string `long:"postgres" env:"POSTGRES_DSN" default:"host=localhost port=5432 user=postgres password=root dbname=postgres sslmode=disable" description:"postgres dsn"`
 	PostgresMaxOpenConnections int    `long:"postgres.max_open_connections" env:"POSTGRES_MAX_OPEN_CONNECTIONS" default:"0" description:"postgres maximal open connections count, 0 means unlimited"`
@@ -59,9 +63,11 @@ func main() {
 
 	db := postgres.MustSetupDB(opts.PostgresDSN, opts.PostgresMaxOpenConnections,
 		opts.PostgresMaxIdleConnections, opts.PostgresMigrations)
+	strg := postgres.New(db)
+	authSvc := auth.New(strg.(storage.UserStorage), opts.SignKey)
 	r := chi.NewMux()
 
-	server.SetupRouter(service.New(postgres.New(db)), r, opts.Username, opts.Password)
+	server.SetupRouter(service.New(strg), authSvc, r, opts.Username, opts.Password)
 
 	srv := http.Server{
 		Addr:    fmt.Sprintf("%s:%d", opts.Host, opts.Port),

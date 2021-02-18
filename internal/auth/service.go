@@ -7,10 +7,18 @@ import (
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/vliubezny/gstore/internal/model"
 	"github.com/vliubezny/gstore/internal/storage"
+)
+
+//go:generate mockgen -destination=./service_mock.go -package=auth -source=service.go
+
+const (
+	typeAccess  = "access"
+	typeRefresh = "refresh"
 )
 
 var (
@@ -20,6 +28,21 @@ var (
 	// ErrInvalidCredentials states that email or password is invalid.
 	ErrInvalidCredentials = errors.New("invalid credentials")
 )
+
+// AccessTokenClaims specifies the claims for access token.
+type AccessTokenClaims struct {
+	TokenType string `json:"type,omitempty"`
+	UserID    int64  `json:"userId,omitempty"`
+	IsAdmin   bool   `json:"admin,omitempty"`
+	jwt.StandardClaims
+}
+
+// RefreshTokenClaims specifies the claims for access token.
+type RefreshTokenClaims struct {
+	TokenType string `json:"type,omitempty"`
+	UserID    int64  `json:"userId,omitempty"`
+	jwt.StandardClaims
+}
 
 // Service provides methods for user authentication.
 type Service interface {
@@ -73,14 +96,42 @@ func (s *authService) Login(ctx context.Context, email, password string) (string
 		return "", ErrInvalidCredentials
 	}
 
-	return createToken(u, s.signKey)
+	return createAccessToken(u, s.signKey)
 }
 
-func createToken(user model.User, signKey string) (string, error) {
-	claims := jwt.MapClaims{}
-	claims["user_id"] = user.ID
-	claims["admin"] = user.IsAdmin
-	claims["exp"] = time.Now().Add(10 * time.Minute).Unix()
+func createAccessToken(user model.User, signKey string) (string, error) {
+	claims := AccessTokenClaims{
+		TokenType: typeAccess,
+		UserID:    user.ID,
+		IsAdmin:   user.IsAdmin,
+		StandardClaims: jwt.StandardClaims{
+			Id:        uuid.NewString(),
+			Issuer:    "gstore.auth",
+			ExpiresAt: time.Now().Add(10 * time.Minute).Unix(),
+		},
+	}
 	at := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return at.SignedString([]byte(signKey))
+}
+
+func validateAccessToken(token, signKey string) (AccessTokenClaims, error) {
+	at, err := jwt.ParseWithClaims(token, &AccessTokenClaims{}, func(t *jwt.Token) (interface{}, error) {
+		if t.Method.Alg() != jwt.SigningMethodHS256.Alg() {
+			return nil, errors.New("token must be signed with HS256 alg")
+		}
+		return []byte(signKey), nil
+	})
+
+	if err != nil {
+		return AccessTokenClaims{}, fmt.Errorf("unable to parse claims: %w", err)
+	}
+
+	claims, ok := at.Claims.(*AccessTokenClaims)
+	if !ok || !at.Valid {
+		return AccessTokenClaims{}, errors.New("invalid token")
+	}
+	if claims.TokenType != typeAccess {
+		return AccessTokenClaims{}, fmt.Errorf("invalid access token: type %s", claims.TokenType)
+	}
+	return *claims, nil
 }

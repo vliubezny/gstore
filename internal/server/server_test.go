@@ -15,6 +15,7 @@ import (
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/vliubezny/gstore/internal/auth"
 	"github.com/vliubezny/gstore/internal/service"
 )
 
@@ -24,8 +25,12 @@ const (
 )
 
 func setupTestRouter(s service.Service) http.Handler {
+	return setupTestRouterWithAuth(s, nil)
+}
+
+func setupTestRouterWithAuth(s service.Service, a auth.Service) http.Handler {
 	r := chi.NewRouter()
-	SetupRouter(s, r, testUsername, testPassword)
+	SetupRouter(s, a, r, testUsername, testPassword)
 	return r
 }
 

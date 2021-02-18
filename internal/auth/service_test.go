@@ -8,6 +8,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/vliubezny/gstore/internal/model"
 	"github.com/vliubezny/gstore/internal/storage"
 	"golang.org/x/crypto/bcrypt"
@@ -140,4 +141,23 @@ func TestService_Login(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestService_createAccessToken(t *testing.T) {
+	u := model.User{
+		ID:      1,
+		Email:   "admin@test.com",
+		IsAdmin: true,
+	}
+
+	at, err := createAccessToken(u, signKey)
+
+	require.NoError(t, err)
+	require.NotEmpty(t, at)
+
+	claims, err := validateAccessToken(at, signKey)
+
+	require.NoError(t, err)
+	assert.Equal(t, u.ID, claims.UserID)
+	assert.Equal(t, u.IsAdmin, claims.IsAdmin)
 }
