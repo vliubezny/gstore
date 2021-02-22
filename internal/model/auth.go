@@ -7,3 +7,9 @@ type User struct {
 	PasswordHash string
 	IsAdmin      bool
 }
+
+// TokenPair groups access and refresh tokens.
+type TokenPair struct {
+	AccessToken  string
+	RefreshToken string
+}

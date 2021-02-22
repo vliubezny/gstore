@@ -12,7 +12,7 @@ import (
 func (s *server) registerHandler(w http.ResponseWriter, r *http.Request) {
 	l := getLogger(r)
 
-	var req registrationForm
+	var req credentials
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(l.WithError(err), w, http.StatusBadRequest, err.Error())
 		return
@@ -39,4 +39,36 @@ func (s *server) registerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeOK(l, w, fromUserModel(u))
+}
+
+func (s *server) loginHandler(w http.ResponseWriter, r *http.Request) {
+	l := getLogger(r)
+
+	var req credentials
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(l.WithError(err), w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := validate(&req); err != nil {
+		writeError(l.WithError(err), w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	l = l.WithField("email", req.Email)
+
+	tokens, err := s.a.Login(r.Context(), req.Email, req.Password)
+	if err != nil {
+		if errors.Is(err, auth.ErrInvalidCredentials) {
+			writeError(l.WithError(err), w, http.StatusUnauthorized, "invalid username or password")
+			return
+		}
+
+		writeInternalError(l.WithError(err), w, "fail to login user")
+		return
+	}
+
+	l.Info("logged in successfully")
+
+	writeOK(l, w, fromTokenPairModel(tokens))
 }

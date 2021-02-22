@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/vliubezny/gstore/internal/model"
 	"github.com/vliubezny/gstore/internal/storage"
 	"golang.org/x/crypto/bcrypt"
@@ -20,7 +20,10 @@ const (
 	testHash = "$2a$10$Ej1ANHun0jp1O5ozBhTbGODKprti6Z2FheUyHdyuvcJ6/feFo9s/K"
 )
 
-var ctx = context.Background()
+var (
+	ctx     = context.Background()
+	errSkip = errors.New("skip")
+)
 
 func TestService_Register(t *testing.T) {
 	testCases := []struct {
@@ -82,44 +85,58 @@ func TestService_Register(t *testing.T) {
 
 func TestService_Login(t *testing.T) {
 	testCases := []struct {
-		desc     string
-		rUser    model.User
-		rErr     error
-		email    string
-		password string
-		err      error
+		desc      string
+		rUser     model.User
+		rUserErr  error
+		rTokenErr error
+		email     string
+		password  string
+		err       error
 	}{
 		{
-			desc:     "success",
-			rUser:    model.User{ID: 1, Email: "admin@test.com", PasswordHash: testHash, IsAdmin: true},
-			rErr:     nil,
-			email:    "admin@test.com",
-			password: testPass,
-			err:      nil,
+			desc:      "success",
+			rUser:     model.User{ID: 1, Email: "admin@test.com", PasswordHash: testHash, IsAdmin: true},
+			rUserErr:  nil,
+			rTokenErr: nil,
+			email:     "admin@test.com",
+			password:  testPass,
+			err:       nil,
 		},
 		{
-			desc:     "invelid email",
-			rUser:    model.User{ID: 1, Email: "admin@test.com", PasswordHash: testHash, IsAdmin: true},
-			rErr:     storage.ErrNotFound,
-			email:    "admin@test.com",
-			password: testPass,
-			err:      ErrInvalidCredentials,
+			desc:      "invalid email",
+			rUser:     model.User{ID: 1, Email: "admin@test.com", PasswordHash: testHash, IsAdmin: true},
+			rUserErr:  storage.ErrNotFound,
+			rTokenErr: errSkip,
+			email:     "admin@test.com",
+			password:  testPass,
+			err:       ErrInvalidCredentials,
 		},
 		{
-			desc:     "invelid password",
-			rUser:    model.User{ID: 1, Email: "admin@test.com", PasswordHash: testHash, IsAdmin: true},
-			rErr:     nil,
-			email:    "admin@test.com",
-			password: "invalid",
-			err:      ErrInvalidCredentials,
+			desc:      "invalid password",
+			rUser:     model.User{ID: 1, Email: "admin@test.com", PasswordHash: testHash, IsAdmin: true},
+			rUserErr:  nil,
+			rTokenErr: errSkip,
+			email:     "admin@test.com",
+			password:  "invalid",
+			err:       ErrInvalidCredentials,
 		},
 		{
-			desc:     "error",
-			rUser:    model.User{ID: 1, Email: "admin@test.com", PasswordHash: testHash, IsAdmin: true},
-			rErr:     assert.AnError,
-			email:    "admin@test.com",
-			password: testPass,
-			err:      assert.AnError,
+			desc:      "error getting user",
+			rUser:     model.User{ID: 1, Email: "admin@test.com", PasswordHash: testHash, IsAdmin: true},
+			rUserErr:  assert.AnError,
+			rTokenErr: errSkip,
+			email:     "admin@test.com",
+			password:  testPass,
+			err:       assert.AnError,
+		},
+		{
+			desc:      "error saving token",
+			rUser:     model.User{ID: 1, Email: "admin@test.com", PasswordHash: testHash, IsAdmin: true},
+			rUserErr:  nil,
+			rTokenErr: assert.AnError,
+			email:     "admin@test.com",
+			password:  testPass,
+			err:       assert.AnError,
 		},
 	}
 	for _, tC := range testCases {
@@ -129,15 +146,21 @@ func TestService_Login(t *testing.T) {
 
 			st := storage.NewMockUserStorage(ctrl)
 
-			st.EXPECT().GetUserByEmail(ctx, tC.email).Return(tC.rUser, tC.rErr)
+			st.EXPECT().GetUserByEmail(ctx, tC.email).Return(tC.rUser, tC.rUserErr)
+
+			if tC.rTokenErr != errSkip {
+				st.EXPECT().SaveToken(ctx, gomock.AssignableToTypeOf(""), tC.rUser.ID, gomock.AssignableToTypeOf(time.Time{})).
+					Return(tC.rTokenErr)
+			}
 
 			s := New(st, signKey)
 
-			token, err := s.Login(ctx, tC.email, tC.password)
+			pair, err := s.Login(ctx, tC.email, tC.password)
 
 			assert.True(t, errors.Is(err, tC.err), fmt.Sprintf("wanted %s got %s", tC.err, err))
 			if err == nil {
-				assert.NotEmpty(t, token)
+				assert.NotEmpty(t, pair.AccessToken)
+				assert.NotEmpty(t, pair.RefreshToken)
 			}
 		})
 	}
@@ -150,14 +173,10 @@ func TestService_createAccessToken(t *testing.T) {
 		IsAdmin: true,
 	}
 
-	at, err := createAccessToken(u, signKey)
+	ac := newAccessClaims(u)
 
-	require.NoError(t, err)
-	require.NotEmpty(t, at)
-
-	claims, err := validateAccessToken(at, signKey)
-
-	require.NoError(t, err)
-	assert.Equal(t, u.ID, claims.UserID)
-	assert.Equal(t, u.IsAdmin, claims.IsAdmin)
+	assert.Equal(t, typeAccess, ac.TokenType)
+	assert.Equal(t, u.ID, ac.UserID)
+	assert.Equal(t, u.IsAdmin, ac.IsAdmin)
+	assert.NotEmpty(t, ac.Id)
 }

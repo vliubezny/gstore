@@ -9,6 +9,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	model "github.com/vliubezny/gstore/internal/model"
 	reflect "reflect"
+	time "time"
 )
 
 // MockStorage is a mock of Storage interface
@@ -362,4 +363,32 @@ func (m *MockUserStorage) GetUserByEmail(ctx context.Context, email string) (mod
 func (mr *MockUserStorageMockRecorder) GetUserByEmail(ctx, email interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByEmail", reflect.TypeOf((*MockUserStorage)(nil).GetUserByEmail), ctx, email)
+}
+
+// SaveToken mocks base method
+func (m *MockUserStorage) SaveToken(ctx context.Context, tokenID string, userID int64, expiresAt time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveToken", ctx, tokenID, userID, expiresAt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveToken indicates an expected call of SaveToken
+func (mr *MockUserStorageMockRecorder) SaveToken(ctx, tokenID, userID, expiresAt interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveToken", reflect.TypeOf((*MockUserStorage)(nil).SaveToken), ctx, tokenID, userID, expiresAt)
+}
+
+// DeleteToken mocks base method
+func (m *MockUserStorage) DeleteToken(ctx context.Context, tokenID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteToken", ctx, tokenID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteToken indicates an expected call of DeleteToken
+func (mr *MockUserStorageMockRecorder) DeleteToken(ctx, tokenID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteToken", reflect.TypeOf((*MockUserStorage)(nil).DeleteToken), ctx, tokenID)
 }

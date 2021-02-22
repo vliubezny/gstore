@@ -41,7 +41,7 @@ func Test_registerHandler(t *testing.T) {
 			rdata:    `{"error": "email is a required field"}`,
 		},
 		{
-			desc:     "invalid: missing email",
+			desc:     "invalid: taken email",
 			user:     model.User{Email: "admin@test.com"},
 			password: "testP@ss",
 			err:      auth.ErrEmailIsTaken,
@@ -75,6 +75,71 @@ func Test_registerHandler(t *testing.T) {
 
 			router := setupTestRouterWithAuth(nil, svc)
 			rec, r := newTestParameters(http.MethodPost, "/v1/register", tC.input)
+
+			router.ServeHTTP(rec, r)
+
+			body, _ := ioutil.ReadAll(rec.Result().Body)
+
+			assert.Equal(t, tC.rcode, rec.Result().StatusCode)
+			assert.JSONEq(t, tC.rdata, string(body))
+		})
+	}
+}
+
+func Test_loginHandler(t *testing.T) {
+	testCases := []struct {
+		desc     string
+		email    string
+		password string
+		tokens   auth.TokenPair
+		err      error
+		input    string
+		rcode    int
+		rdata    string
+	}{
+		{
+			desc:     "success",
+			email:    "admin@test.com",
+			password: "testP@ss",
+			tokens:   auth.TokenPair{AccessToken: "testAccess", RefreshToken: "testRefresh"},
+			err:      nil,
+			input:    `{"email":"admin@test.com", "password":"testP@ss"}`,
+			rcode:    http.StatusOK,
+			rdata:    `{"accessToken":"testAccess", "refreshToken":"testRefresh"}`,
+		},
+		{
+			desc:     "invalid credentials",
+			email:    "admin@test.com",
+			password: "testP@ss",
+			tokens:   auth.TokenPair{},
+			err:      auth.ErrInvalidCredentials,
+			input:    `{"email":"admin@test.com", "password":"testP@ss"}`,
+			rcode:    http.StatusUnauthorized,
+			rdata:    `{"error":"invalid username or password"}`,
+		},
+		{
+			desc:     "internal error",
+			email:    "admin@test.com",
+			password: "testP@ss",
+			tokens:   auth.TokenPair{},
+			err:      assert.AnError,
+			input:    `{"email":"admin@test.com", "password":"testP@ss"}`,
+			rcode:    http.StatusInternalServerError,
+			rdata:    `{"error":"internal error"}`,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			svc := auth.NewMockService(ctrl)
+			if tC.err != errSkip {
+				svc.EXPECT().Login(gomock.Any(), tC.email, tC.password).Return(tC.tokens, tC.err)
+			}
+
+			router := setupTestRouterWithAuth(nil, svc)
+			rec, r := newTestParameters(http.MethodPost, "/v1/login", tC.input)
 
 			router.ServeHTTP(rec, r)
 

@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/shopspring/decimal"
+	"github.com/vliubezny/gstore/internal/auth"
 	"github.com/vliubezny/gstore/internal/model"
 )
 
@@ -96,7 +97,7 @@ func (p position) toModel() model.Position {
 	}
 }
 
-type registrationForm struct {
+type credentials struct {
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required,gte=8,lte=160"`
 }
@@ -112,5 +113,17 @@ func fromUserModel(u model.User) user {
 		ID:      u.ID,
 		Email:   u.Email,
 		IsAdmin: u.IsAdmin,
+	}
+}
+
+type tokenPair struct {
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
+}
+
+func fromTokenPairModel(tp auth.TokenPair) tokenPair {
+	return tokenPair{
+		AccessToken:  tp.AccessToken,
+		RefreshToken: tp.RefreshToken,
 	}
 }

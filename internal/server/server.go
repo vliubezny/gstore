@@ -32,6 +32,7 @@ func SetupRouter(s service.Service, a auth.Service, r chi.Router, username, pass
 	)
 
 	r.Post("/v1/register", srv.registerHandler)
+	r.Post("/v1/login", srv.loginHandler)
 
 	r.Get("/v1/categories", srv.getCategoriesHandler)
 	r.Get("/v1/categories/{id}", srv.getCategoryHandler)

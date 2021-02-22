@@ -19,6 +19,8 @@ import (
 const (
 	typeAccess  = "access"
 	typeRefresh = "refresh"
+
+	issuer = "gstore.auth"
 )
 
 var (
@@ -44,22 +46,28 @@ type RefreshTokenClaims struct {
 	jwt.StandardClaims
 }
 
+// TokenPair groups access and refresh tokens.
+type TokenPair struct {
+	AccessToken  string
+	RefreshToken string
+}
+
 // Service provides methods for user authentication.
 type Service interface {
 	Register(ctx context.Context, user model.User, password string) (model.User, error)
-	Login(ctx context.Context, email, password string) (string, error)
+	Login(ctx context.Context, email, password string) (TokenPair, error)
 }
 
 type authService struct {
 	s       storage.UserStorage
-	signKey string
+	signKey []byte
 }
 
 // New creates instance of auth service.
 func New(s storage.UserStorage, signKey string) Service {
 	return &authService{
 		s:       s,
-		signKey: signKey,
+		signKey: []byte(signKey),
 	}
 }
 
@@ -83,35 +91,54 @@ func (s *authService) Register(ctx context.Context, user model.User, password st
 	return user, nil
 }
 
-func (s *authService) Login(ctx context.Context, email, password string) (string, error) {
+func (s *authService) Login(ctx context.Context, email, password string) (TokenPair, error) {
 	u, err := s.s.GetUserByEmail(ctx, email)
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
-			return "", ErrInvalidCredentials
+			return TokenPair{}, ErrInvalidCredentials
 		}
-		return "", fmt.Errorf("failed to register user: %w", err)
+		return TokenPair{}, fmt.Errorf("failed to get user: %w", err)
 	}
 
 	if err = bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password)); err != nil {
-		return "", ErrInvalidCredentials
+		return TokenPair{}, ErrInvalidCredentials
 	}
 
-	return createAccessToken(u, s.signKey)
+	at, err := s.signToken(newAccessClaims(u))
+	if err != nil {
+		return TokenPair{}, fmt.Errorf("failed to sign access token: %w", err)
+	}
+
+	rc := newRefreshClaims(u)
+
+	if err = s.s.SaveToken(ctx, rc.Id, u.ID, time.Unix(rc.ExpiresAt, 0)); err != nil {
+		return TokenPair{}, fmt.Errorf("failed to save refresh token: %w", err)
+	}
+
+	rt, err := s.signToken(rc)
+	if err != nil {
+		return TokenPair{}, fmt.Errorf("failed to sign refresh token: %w", err)
+	}
+
+	return TokenPair{AccessToken: at, RefreshToken: rt}, nil
 }
 
-func createAccessToken(user model.User, signKey string) (string, error) {
-	claims := AccessTokenClaims{
+func (s *authService) signToken(claims jwt.Claims) (string, error) {
+	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(s.signKey)
+}
+
+func newAccessClaims(user model.User) AccessTokenClaims {
+	return AccessTokenClaims{
 		TokenType: typeAccess,
 		UserID:    user.ID,
 		IsAdmin:   user.IsAdmin,
 		StandardClaims: jwt.StandardClaims{
 			Id:        uuid.NewString(),
-			Issuer:    "gstore.auth",
+			Issuer:    issuer,
+			IssuedAt:  time.Now().Unix(),
 			ExpiresAt: time.Now().Add(10 * time.Minute).Unix(),
 		},
 	}
-	at := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return at.SignedString([]byte(signKey))
 }
 
 func validateAccessToken(token, signKey string) (AccessTokenClaims, error) {
@@ -134,4 +161,17 @@ func validateAccessToken(token, signKey string) (AccessTokenClaims, error) {
 		return AccessTokenClaims{}, fmt.Errorf("invalid access token: type %s", claims.TokenType)
 	}
 	return *claims, nil
+}
+
+func newRefreshClaims(user model.User) RefreshTokenClaims {
+	return RefreshTokenClaims{
+		TokenType: typeRefresh,
+		UserID:    user.ID,
+		StandardClaims: jwt.StandardClaims{
+			Id:        uuid.NewString(),
+			Issuer:    issuer,
+			IssuedAt:  time.Now().Unix(),
+			ExpiresAt: time.Now().Add(30 * 24 * time.Hour).Unix(),
+		},
+	}
 }

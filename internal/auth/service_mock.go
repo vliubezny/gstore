@@ -50,10 +50,10 @@ func (mr *MockServiceMockRecorder) Register(ctx, user, password interface{}) *go
 }
 
 // Login mocks base method
-func (m *MockService) Login(ctx context.Context, email, password string) (string, error) {
+func (m *MockService) Login(ctx context.Context, email, password string) (TokenPair, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Login", ctx, email, password)
-	ret0, _ := ret[0].(string)
+	ret0, _ := ret[0].(TokenPair)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
