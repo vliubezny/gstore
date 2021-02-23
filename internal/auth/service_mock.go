@@ -78,3 +78,17 @@ func (mr *MockServiceMockRecorder) Refresh(ctx, refreshToken interface{}) *gomoc
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Refresh", reflect.TypeOf((*MockService)(nil).Refresh), ctx, refreshToken)
 }
+
+// Revoke mocks base method
+func (m *MockService) Revoke(ctx context.Context, refreshToken string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Revoke", ctx, refreshToken)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Revoke indicates an expected call of Revoke
+func (mr *MockServiceMockRecorder) Revoke(ctx, refreshToken interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Revoke", reflect.TypeOf((*MockService)(nil).Revoke), ctx, refreshToken)
+}

@@ -152,7 +152,7 @@ func Test_loginHandler(t *testing.T) {
 	}
 }
 
-func Test_refrshHandler(t *testing.T) {
+func Test_refreshHandler(t *testing.T) {
 	testCases := []struct {
 		desc   string
 		token  string
@@ -216,6 +216,73 @@ func Test_refrshHandler(t *testing.T) {
 
 			assert.Equal(t, tC.rcode, rec.Result().StatusCode)
 			assert.JSONEq(t, tC.rdata, string(body))
+		})
+	}
+}
+
+func Test_revokeHandler(t *testing.T) {
+	testCases := []struct {
+		desc  string
+		token string
+		err   error
+		rcode int
+		rdata string
+	}{
+		{
+			desc:  "success",
+			token: "testToken",
+			err:   nil,
+			rcode: http.StatusNoContent,
+			rdata: "",
+		},
+		{
+			desc:  "missing token - Unauthorized",
+			token: "",
+			err:   errSkip,
+			rcode: http.StatusUnauthorized,
+			rdata: `{"error":"missing token"}`,
+		},
+		{
+			desc:  "invalid token - Unauthorized",
+			token: "testtoken",
+			err:   auth.ErrInvalidToken,
+			rcode: http.StatusUnauthorized,
+			rdata: `{"error":"invalid refresh token"}`,
+		},
+		{
+			desc:  "error",
+			token: "testtoken",
+			err:   assert.AnError,
+			rcode: http.StatusInternalServerError,
+			rdata: `{"error":"internal error"}`,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			svc := auth.NewMockService(ctrl)
+			if tC.err != errSkip {
+				svc.EXPECT().Revoke(gomock.Any(), tC.token).Return(tC.err)
+			}
+
+			router := setupTestRouterWithAuth(nil, svc)
+			rec, r := newTestParameters(http.MethodPost, "/v1/revoke", "")
+			if tC.token != "" {
+				r.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tC.token))
+			}
+
+			router.ServeHTTP(rec, r)
+
+			body, _ := ioutil.ReadAll(rec.Result().Body)
+
+			assert.Equal(t, tC.rcode, rec.Result().StatusCode)
+			if tC.rdata == "" {
+				assert.Empty(t, string(body))
+			} else {
+				assert.JSONEq(t, tC.rdata, string(body))
+			}
 		})
 	}
 }

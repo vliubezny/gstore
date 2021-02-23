@@ -285,6 +285,59 @@ func TestService_Refresh(t *testing.T) {
 	}
 }
 
+func TestService_Revoke(t *testing.T) {
+	user := model.User{ID: 1, Email: "admin@test.com", PasswordHash: testHash, IsAdmin: true}
+	testCases := []struct {
+		desc  string
+		rErr  error
+		token string
+		err   error
+	}{
+		{
+			desc:  "success",
+			rErr:  nil,
+			token: mustSign(user),
+			err:   nil,
+		},
+		{
+			desc:  "token used - success",
+			rErr:  storage.ErrNotFound,
+			token: mustSign(user),
+			err:   nil,
+		},
+		{
+			desc:  "malformed token - ErrInvalidToken",
+			rErr:  errSkip,
+			token: "test",
+			err:   ErrInvalidToken,
+		},
+		{
+			desc:  "delete token - error",
+			rErr:  assert.AnError,
+			token: mustSign(user),
+			err:   assert.AnError,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			st := storage.NewMockUserStorage(ctrl)
+
+			if tC.rErr != errSkip {
+				st.EXPECT().DeleteToken(ctx, gomock.AssignableToTypeOf("")).Return(tC.rErr)
+			}
+
+			s := New(st, signKey)
+
+			err := s.Revoke(ctx, tC.token)
+
+			assert.True(t, errors.Is(err, tC.err), fmt.Sprintf("wanted %s got %s", tC.err, err))
+		})
+	}
+}
+
 func TestService_newAccessClaims(t *testing.T) {
 	u := model.User{
 		ID:      1,

@@ -60,6 +60,7 @@ type Service interface {
 	Register(ctx context.Context, user model.User, password string) (model.User, error)
 	Login(ctx context.Context, email, password string) (TokenPair, error)
 	Refresh(ctx context.Context, refreshToken string) (TokenPair, error)
+	Revoke(ctx context.Context, refreshToken string) error
 }
 
 type authService struct {
@@ -165,6 +166,19 @@ func (s *authService) Refresh(ctx context.Context, refreshToken string) (TokenPa
 	}
 
 	return TokenPair{AccessToken: at, RefreshToken: rt}, nil
+}
+
+func (s *authService) Revoke(ctx context.Context, refreshToken string) error {
+	claims, err := validateRefreshToken(refreshToken, s.signKey)
+	if err != nil {
+		return fmt.Errorf("%w: %v", ErrInvalidToken, err)
+	}
+
+	if err = s.s.DeleteToken(ctx, claims.Id); err != nil && !errors.Is(err, storage.ErrNotFound) {
+		return fmt.Errorf("failed to delete token: %w", err)
+	}
+
+	return nil
 }
 
 func (s *authService) signToken(claims jwt.Claims) (string, error) {
