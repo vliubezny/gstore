@@ -41,6 +41,21 @@ func (p pg) GetUserByEmail(ctx context.Context, email string) (model.User, error
 	return u.toModel(), nil
 }
 
+func (p pg) GetUserByID(ctx context.Context, id int64) (model.User, error) {
+	var u user
+	err := p.db.GetContext(ctx, &u, "SELECT * FROM store_user WHERE id = $1", id)
+
+	if err == sql.ErrNoRows {
+		return model.User{}, storage.ErrNotFound
+	}
+
+	if err != nil {
+		return model.User{}, fmt.Errorf("failed to get user: %w", err)
+	}
+
+	return u.toModel(), nil
+}
+
 func (p pg) SaveToken(ctx context.Context, tokenID string, userID int64, expiresAt time.Time) error {
 	if _, err := p.db.ExecContext(ctx, `
 			INSERT INTO token (id, user_id, expires_at) VALUES ($1, $2, $3)

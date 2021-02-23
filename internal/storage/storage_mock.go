@@ -365,6 +365,21 @@ func (mr *MockUserStorageMockRecorder) GetUserByEmail(ctx, email interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByEmail", reflect.TypeOf((*MockUserStorage)(nil).GetUserByEmail), ctx, email)
 }
 
+// GetUserByID mocks base method
+func (m *MockUserStorage) GetUserByID(ctx context.Context, id int64) (model.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserByID", ctx, id)
+	ret0, _ := ret[0].(model.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserByID indicates an expected call of GetUserByID
+func (mr *MockUserStorageMockRecorder) GetUserByID(ctx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByID", reflect.TypeOf((*MockUserStorage)(nil).GetUserByID), ctx, id)
+}
+
 // SaveToken mocks base method
 func (m *MockUserStorage) SaveToken(ctx context.Context, tokenID string, userID int64, expiresAt time.Time) error {
 	m.ctrl.T.Helper()

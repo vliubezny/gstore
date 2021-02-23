@@ -7,8 +7,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/vliubezny/gstore/internal/model"
 	"github.com/vliubezny/gstore/internal/storage"
 	"golang.org/x/crypto/bcrypt"
@@ -166,7 +168,124 @@ func TestService_Login(t *testing.T) {
 	}
 }
 
-func TestService_createAccessToken(t *testing.T) {
+func mustSign(u model.User) string {
+	c := newRefreshClaims(u)
+	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, c).SignedString([]byte(signKey))
+	if err != nil {
+		panic(err)
+	}
+	return token
+}
+
+func TestService_Refresh(t *testing.T) {
+	user := model.User{ID: 1, Email: "admin@test.com", PasswordHash: testHash, IsAdmin: true}
+	testCases := []struct {
+		desc            string
+		rUser           model.User
+		rUserErr        error
+		rDeleteTokenErr error
+		rSaveTokenErr   error
+		token           string
+		err             error
+	}{
+		{
+			desc:            "success",
+			rUser:           user,
+			rUserErr:        nil,
+			rDeleteTokenErr: nil,
+			rSaveTokenErr:   nil,
+			token:           mustSign(user),
+			err:             nil,
+		},
+		{
+			desc:            "malformed token - ErrInvalidToken",
+			rUser:           model.User{},
+			rUserErr:        errSkip,
+			rDeleteTokenErr: errSkip,
+			rSaveTokenErr:   errSkip,
+			token:           "test",
+			err:             ErrInvalidToken,
+		},
+		{
+			desc:            "missing user - ErrInvalidToken",
+			rUser:           user,
+			rUserErr:        storage.ErrNotFound,
+			rDeleteTokenErr: errSkip,
+			rSaveTokenErr:   errSkip,
+			token:           mustSign(user),
+			err:             ErrInvalidToken,
+		},
+		{
+			desc:            "get user - error",
+			rUser:           user,
+			rUserErr:        assert.AnError,
+			rDeleteTokenErr: errSkip,
+			rSaveTokenErr:   errSkip,
+			token:           mustSign(user),
+			err:             assert.AnError,
+		},
+		{
+			desc:            "token used - ErrInvalidToken",
+			rUser:           user,
+			rUserErr:        nil,
+			rDeleteTokenErr: storage.ErrNotFound,
+			rSaveTokenErr:   errSkip,
+			token:           mustSign(user),
+			err:             ErrInvalidToken,
+		},
+		{
+			desc:            "delete token - error",
+			rUser:           user,
+			rUserErr:        nil,
+			rDeleteTokenErr: assert.AnError,
+			rSaveTokenErr:   errSkip,
+			token:           mustSign(user),
+			err:             assert.AnError,
+		},
+		{
+			desc:            "save token - error",
+			rUser:           user,
+			rUserErr:        nil,
+			rDeleteTokenErr: nil,
+			rSaveTokenErr:   assert.AnError,
+			token:           mustSign(user),
+			err:             assert.AnError,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			st := storage.NewMockUserStorage(ctrl)
+
+			if tC.rUserErr != errSkip {
+				st.EXPECT().GetUserByID(ctx, tC.rUser.ID).Return(tC.rUser, tC.rUserErr)
+			}
+
+			if tC.rDeleteTokenErr != errSkip {
+				st.EXPECT().DeleteToken(ctx, gomock.AssignableToTypeOf("")).Return(tC.rDeleteTokenErr)
+			}
+
+			if tC.rSaveTokenErr != errSkip {
+				st.EXPECT().SaveToken(ctx, gomock.AssignableToTypeOf(""), tC.rUser.ID, gomock.AssignableToTypeOf(time.Time{})).
+					Return(tC.rSaveTokenErr)
+			}
+
+			s := New(st, signKey)
+
+			pair, err := s.Refresh(ctx, tC.token)
+
+			assert.True(t, errors.Is(err, tC.err), fmt.Sprintf("wanted %s got %s", tC.err, err))
+			if err == nil {
+				assert.NotEmpty(t, pair.AccessToken)
+				assert.NotEmpty(t, pair.RefreshToken)
+			}
+		})
+	}
+}
+
+func TestService_newAccessClaims(t *testing.T) {
 	u := model.User{
 		ID:      1,
 		Email:   "admin@test.com",
@@ -179,4 +298,44 @@ func TestService_createAccessToken(t *testing.T) {
 	assert.Equal(t, u.ID, ac.UserID)
 	assert.Equal(t, u.IsAdmin, ac.IsAdmin)
 	assert.NotEmpty(t, ac.Id)
+	assert.InDelta(t, time.Now().Add(10*time.Minute).Unix(), ac.ExpiresAt, 1)
+}
+
+func TestService_newRefreshClaims(t *testing.T) {
+	u := model.User{
+		ID:      1,
+		Email:   "admin@test.com",
+		IsAdmin: true,
+	}
+
+	ac := newRefreshClaims(u)
+
+	assert.Equal(t, typeRefresh, ac.TokenType)
+	assert.Equal(t, u.ID, ac.UserID)
+	assert.NotEmpty(t, ac.Id)
+	assert.InDelta(t, time.Now().Add(30*24*time.Hour).Unix(), ac.ExpiresAt, 1)
+}
+
+func TestService_validateRefreshToken(t *testing.T) {
+	s := &authService{
+		signKey: []byte(signKey),
+	}
+
+	u := model.User{
+		ID:      1,
+		Email:   "admin@test.com",
+		IsAdmin: true,
+	}
+
+	ac := newRefreshClaims(u)
+	token, err := s.signToken(ac)
+	require.NoError(t, err)
+
+	ac, err = validateRefreshToken(token, []byte(signKey))
+	require.NoError(t, err)
+
+	assert.Equal(t, typeRefresh, ac.TokenType)
+	assert.Equal(t, u.ID, ac.UserID)
+	assert.NotEmpty(t, ac.Id)
+	assert.InDelta(t, time.Now().Add(30*24*time.Hour).Unix(), ac.ExpiresAt, 1)
 }

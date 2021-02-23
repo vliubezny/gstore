@@ -47,6 +47,19 @@ func (s *postgresTestSuite) TestPg_GetUserByEmail() {
 	s.True(errors.Is(storage.ErrNotFound, err))
 }
 
+func (s *postgresTestSuite) TestPg_GetUserByID() {
+	_, err := s.db.Exec(`INSERT INTO store_user (email, password_hash, is_admin) VALUES ('admin@test.com', '123', TRUE);`)
+	s.Require().NoError(err)
+
+	u, err := s.s.(pg).GetUserByID(s.ctx, 1)
+	s.Require().NoError(err)
+
+	s.Equal(model.User{ID: 1, Email: "admin@test.com", PasswordHash: "123", IsAdmin: true}, u)
+
+	_, err = s.s.(pg).GetUserByID(s.ctx, 100500)
+	s.True(errors.Is(storage.ErrNotFound, err))
+}
+
 func (s *postgresTestSuite) TestPg_SaveToken() {
 	_, err := s.db.Exec(`INSERT INTO store_user (email, password_hash, is_admin) VALUES ('admin@test.com', '123', TRUE);`)
 	s.Require().NoError(err)

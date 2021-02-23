@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"runtime/debug"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi"
 	"github.com/shopspring/decimal"
@@ -33,6 +34,7 @@ func SetupRouter(s service.Service, a auth.Service, r chi.Router, username, pass
 
 	r.Post("/v1/register", srv.registerHandler)
 	r.Post("/v1/login", srv.loginHandler)
+	r.Post("/v1/refresh", srv.refreshHandler)
 
 	r.Get("/v1/categories", srv.getCategoriesHandler)
 	r.Get("/v1/categories/{id}", srv.getCategoryHandler)
@@ -69,6 +71,14 @@ func SetupRouter(s service.Service, a auth.Service, r chi.Router, username, pass
 
 func getLogger(r *http.Request) logrus.FieldLogger {
 	return r.Context().Value(loggerKey{}).(logrus.FieldLogger)
+}
+
+func extractBearer(r *http.Request) string {
+	auth := r.Header.Get("Authorization")
+	if len(auth) > 7 && strings.ToUpper(auth[0:7]) == "BEARER " {
+		return auth[7:]
+	}
+	return ""
 }
 
 func getIDFromURL(r *http.Request, key string) (int64, error) {

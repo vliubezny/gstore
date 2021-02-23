@@ -115,3 +115,44 @@ func Test_writeOK(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Result().StatusCode)
 	assert.Equal(t, `{"Msg":"test"}`, string(body))
 }
+
+func Test_extractBearer(t *testing.T) {
+	testCases := []struct {
+		desc  string
+		auth  string
+		token string
+	}{
+		{
+			desc:  "success",
+			auth:  "Bearer testtoken",
+			token: "testtoken",
+		},
+		{
+			desc:  "missing header",
+			auth:  "",
+			token: "",
+		},
+		{
+			desc:  "incorrect header",
+			auth:  "Basic 1223232323",
+			token: "",
+		},
+		{
+			desc:  "empty bearer",
+			auth:  "Bearer ",
+			token: "",
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			r := httptest.NewRequest("", "/", nil)
+			if tC.auth != "" {
+				r.Header.Set("Authorization", tC.auth)
+			}
+
+			token := extractBearer(r)
+
+			assert.Equal(t, tC.token, token)
+		})
+	}
+}

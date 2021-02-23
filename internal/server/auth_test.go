@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"testing"
@@ -140,6 +141,74 @@ func Test_loginHandler(t *testing.T) {
 
 			router := setupTestRouterWithAuth(nil, svc)
 			rec, r := newTestParameters(http.MethodPost, "/v1/login", tC.input)
+
+			router.ServeHTTP(rec, r)
+
+			body, _ := ioutil.ReadAll(rec.Result().Body)
+
+			assert.Equal(t, tC.rcode, rec.Result().StatusCode)
+			assert.JSONEq(t, tC.rdata, string(body))
+		})
+	}
+}
+
+func Test_refrshHandler(t *testing.T) {
+	testCases := []struct {
+		desc   string
+		token  string
+		tokens auth.TokenPair
+		err    error
+		rcode  int
+		rdata  string
+	}{
+		{
+			desc:   "success",
+			token:  "testToken",
+			tokens: auth.TokenPair{AccessToken: "testAccess", RefreshToken: "testRefresh"},
+			err:    nil,
+			rcode:  http.StatusOK,
+			rdata:  `{"accessToken":"testAccess", "refreshToken":"testRefresh"}`,
+		},
+		{
+			desc:   "missing token - Unauthorized",
+			token:  "",
+			tokens: auth.TokenPair{AccessToken: "testAccess", RefreshToken: "testRefresh"},
+			err:    errSkip,
+			rcode:  http.StatusUnauthorized,
+			rdata:  `{"error":"missing token"}`,
+		},
+		{
+			desc:   "invalid token - Unauthorized",
+			token:  "testtoken",
+			tokens: auth.TokenPair{AccessToken: "testAccess", RefreshToken: "testRefresh"},
+			err:    auth.ErrInvalidToken,
+			rcode:  http.StatusUnauthorized,
+			rdata:  `{"error":"invalid refresh token"}`,
+		},
+		{
+			desc:   "error",
+			token:  "testtoken",
+			tokens: auth.TokenPair{AccessToken: "testAccess", RefreshToken: "testRefresh"},
+			err:    assert.AnError,
+			rcode:  http.StatusInternalServerError,
+			rdata:  `{"error":"internal error"}`,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			svc := auth.NewMockService(ctrl)
+			if tC.err != errSkip {
+				svc.EXPECT().Refresh(gomock.Any(), tC.token).Return(tC.tokens, tC.err)
+			}
+
+			router := setupTestRouterWithAuth(nil, svc)
+			rec, r := newTestParameters(http.MethodPost, "/v1/refresh", "")
+			if tC.token != "" {
+				r.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tC.token))
+			}
 
 			router.ServeHTTP(rec, r)
 

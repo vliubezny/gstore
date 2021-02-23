@@ -72,3 +72,28 @@ func (s *server) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	writeOK(l, w, fromTokenPairModel(tokens))
 }
+
+func (s *server) refreshHandler(w http.ResponseWriter, r *http.Request) {
+	l := getLogger(r)
+
+	token := extractBearer(r)
+	if token == "" {
+		writeError(l, w, http.StatusUnauthorized, "missing token")
+		return
+	}
+
+	tokens, err := s.a.Refresh(r.Context(), token)
+	if err != nil {
+		if errors.Is(err, auth.ErrInvalidToken) {
+			writeError(l.WithError(err), w, http.StatusUnauthorized, "invalid refresh token")
+			return
+		}
+
+		writeInternalError(l.WithError(err), w, "fail to refresh tokens")
+		return
+	}
+
+	l.Info("refreshed tokens successfully")
+
+	writeOK(l, w, fromTokenPairModel(tokens))
+}

@@ -95,6 +95,9 @@ type UserStorage interface {
 	// GetUserByEmail returns user from storage by email.
 	GetUserByEmail(ctx context.Context, email string) (model.User, error)
 
+	// GetUserByID returns user from storage by ID.
+	GetUserByID(ctx context.Context, id int64) (model.User, error)
+
 	// SaveToken saves token reference.
 	SaveToken(ctx context.Context, tokenID string, userID int64, expiresAt time.Time) error
 
