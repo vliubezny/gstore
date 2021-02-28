@@ -11,7 +11,7 @@ import (
 
 func (p pg) GetCategories(ctx context.Context) ([]model.Category, error) {
 	var categories []category
-	if err := p.db.SelectContext(ctx, &categories, "SELECT * FROM category"); err != nil {
+	if err := p.db.SelectContext(ctx, &categories, "SELECT id, name FROM category"); err != nil {
 		return nil, err
 	}
 
@@ -25,7 +25,7 @@ func (p pg) GetCategories(ctx context.Context) ([]model.Category, error) {
 
 func (p pg) GetCategory(ctx context.Context, categoryID int64) (model.Category, error) {
 	var c category
-	err := p.db.GetContext(ctx, &c, "SELECT * FROM category WHERE id = $1", categoryID)
+	err := p.db.GetContext(ctx, &c, "SELECT id, name FROM category WHERE id = $1", categoryID)
 
 	if err == sql.ErrNoRows {
 		return model.Category{}, storage.ErrNotFound

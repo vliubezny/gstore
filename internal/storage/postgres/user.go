@@ -28,7 +28,7 @@ func (p pg) CreateUser(ctx context.Context, user model.User) (model.User, error)
 
 func (p pg) GetUserByEmail(ctx context.Context, email string) (model.User, error) {
 	var u user
-	err := p.db.GetContext(ctx, &u, "SELECT * FROM store_user WHERE email = $1", email)
+	err := p.db.GetContext(ctx, &u, "SELECT id, email, password_hash, is_admin FROM store_user WHERE email = $1", email)
 
 	if err == sql.ErrNoRows {
 		return model.User{}, storage.ErrNotFound
@@ -43,7 +43,7 @@ func (p pg) GetUserByEmail(ctx context.Context, email string) (model.User, error
 
 func (p pg) GetUserByID(ctx context.Context, id int64) (model.User, error) {
 	var u user
-	err := p.db.GetContext(ctx, &u, "SELECT * FROM store_user WHERE id = $1", id)
+	err := p.db.GetContext(ctx, &u, "SELECT id, email, password_hash, is_admin FROM store_user WHERE id = $1", id)
 
 	if err == sql.ErrNoRows {
 		return model.User{}, storage.ErrNotFound

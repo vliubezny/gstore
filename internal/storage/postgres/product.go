@@ -15,7 +15,7 @@ const categoryIDFKConstraint = "product_category_id_fkey"
 func (p pg) GetProducts(ctx context.Context, categoryID int64) ([]model.Product, error) {
 	var products []product
 
-	if err := p.db.SelectContext(ctx, &products, "SELECT * FROM product WHERE category_id=$1", categoryID); err != nil {
+	if err := p.db.SelectContext(ctx, &products, "SELECT id, category_id, name, description FROM product WHERE category_id=$1", categoryID); err != nil {
 		return nil, fmt.Errorf("failed to get products: %w", err)
 	}
 
@@ -29,7 +29,7 @@ func (p pg) GetProducts(ctx context.Context, categoryID int64) ([]model.Product,
 
 func (p pg) GetProduct(ctx context.Context, productID int64) (model.Product, error) {
 	var prod product
-	err := p.db.GetContext(ctx, &prod, "SELECT * FROM product WHERE id = $1", productID)
+	err := p.db.GetContext(ctx, &prod, "SELECT id, category_id, name, description FROM product WHERE id = $1", productID)
 
 	if err == sql.ErrNoRows {
 		return model.Product{}, storage.ErrNotFound
