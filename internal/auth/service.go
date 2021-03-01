@@ -147,7 +147,7 @@ func (s *authService) Refresh(ctx context.Context, refreshToken string) (TokenPa
 	}
 
 	if err = s.s.DeleteToken(ctx, claims.Id); err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
+		if errors.Is(err, storage.ErrNotFound) { // reject refresh request if token was not found
 			return TokenPair{}, fmt.Errorf("%w: token has been used", ErrInvalidToken)
 		}
 		return TokenPair{}, fmt.Errorf("failed to delete token: %w", err)
