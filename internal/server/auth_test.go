@@ -290,3 +290,86 @@ func Test_revokeHandler(t *testing.T) {
 		})
 	}
 }
+
+func Test_updateUserPermissionsHandler(t *testing.T) {
+	testCases := []struct {
+		desc  string
+		id    string
+		user  model.User
+		err   error
+		input string
+		rcode int
+		rdata string
+	}{
+		{
+			desc:  "success",
+			id:    "1",
+			user:  model.User{ID: 1, IsAdmin: true},
+			err:   nil,
+			input: `{"isAdmin":true}`,
+			rcode: http.StatusNoContent,
+			rdata: ``,
+		},
+		{
+			desc:  "invalid id",
+			id:    "test",
+			user:  model.User{ID: 1, IsAdmin: true},
+			err:   errSkip,
+			input: `{"isAdmin":true}`,
+			rcode: http.StatusBadRequest,
+			rdata: `{"error":"invalid user ID"}`,
+		},
+		{
+			desc:  "invalid payload",
+			id:    "1",
+			user:  model.User{ID: 1, IsAdmin: true},
+			err:   errSkip,
+			input: `{"admin":true}`,
+			rcode: http.StatusBadRequest,
+			rdata: `{"error":"isAdmin is a required field"}`,
+		},
+		{
+			desc:  "user not found",
+			id:    "1",
+			user:  model.User{ID: 1, IsAdmin: true},
+			err:   auth.ErrNotFound,
+			input: `{"isAdmin":true}`,
+			rcode: http.StatusNotFound,
+			rdata: `{"error":"user not found"}`,
+		},
+		{
+			desc:  "internal error",
+			id:    "1",
+			user:  model.User{ID: 1, IsAdmin: true},
+			err:   assert.AnError,
+			input: `{"isAdmin":true}`,
+			rcode: http.StatusInternalServerError,
+			rdata: `{"error":"internal error"}`,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			svc := auth.NewMockService(ctrl)
+			if tC.err != errSkip {
+				svc.EXPECT().UpdateUserPermissions(gomock.Any(), tC.user).Return(tC.err)
+			}
+
+			router := setupTestRouterWithAuth(nil, svc)
+			rec, r := newTestParameters(http.MethodPut, fmt.Sprintf("/v1/users/%s/permissions", tC.id), tC.input)
+
+			router.ServeHTTP(rec, r)
+
+			body, _ := ioutil.ReadAll(rec.Result().Body)
+
+			assert.Equal(t, tC.rcode, rec.Result().StatusCode)
+			if tC.rdata == "" {
+				assert.Empty(t, string(body))
+			} else {
+				assert.JSONEq(t, tC.rdata, string(body))
+			}
+		})
+	}
+}

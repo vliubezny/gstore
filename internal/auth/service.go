@@ -32,6 +32,9 @@ var (
 
 	// ErrInvalidToken states that token is invalid.
 	ErrInvalidToken = errors.New("invalid token")
+
+	// ErrNotFound states that object(s) was not found.
+	ErrNotFound = errors.New("not found")
 )
 
 // AccessTokenClaims specifies the claims for access token.
@@ -65,6 +68,7 @@ type Service interface {
 	Refresh(ctx context.Context, refreshToken string) (TokenPair, error)
 	Revoke(ctx context.Context, refreshToken string) error
 	ValidateAccessToken(token string) (AccessTokenClaims, error)
+	UpdateUserPermissions(ctx context.Context, user model.User) error
 }
 
 type authService struct {
@@ -258,4 +262,15 @@ func validateRefreshToken(token string, signKey []byte) (RefreshTokenClaims, err
 		return RefreshTokenClaims{}, fmt.Errorf("invalid refresh token: type %s", claims.TokenType)
 	}
 	return *claims, nil
+}
+
+func (s *authService) UpdateUserPermissions(ctx context.Context, user model.User) error {
+	if err := s.s.UpdateUserPermissions(ctx, user); err != nil {
+		if errors.Is(storage.ErrNotFound, err) {
+			return ErrNotFound
+		}
+
+		return fmt.Errorf("failed to update user permissions: %w", err)
+	}
+	return nil
 }

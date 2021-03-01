@@ -120,3 +120,39 @@ func (s *server) revokeHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func (s *server) updateUserPermissionsHandler(w http.ResponseWriter, r *http.Request) {
+	l := getLogger(r)
+
+	id, err := getIDFromURL(r, "id")
+	if err != nil {
+		writeError(l.WithError(err), w, http.StatusBadRequest, "invalid user ID")
+		return
+	}
+
+	var req userPermissions
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(l.WithError(err), w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := validate(&req); err != nil {
+		writeError(l.WithError(err), w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	user := req.toModel()
+	user.ID = id
+
+	if err := s.a.UpdateUserPermissions(r.Context(), user); err != nil {
+		switch {
+		case errors.Is(err, auth.ErrNotFound):
+			writeError(l.WithError(err), w, http.StatusNotFound, "user not found")
+		default:
+			writeInternalError(l.WithError(err), w, "fail to update user permissions")
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

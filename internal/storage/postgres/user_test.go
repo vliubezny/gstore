@@ -94,3 +94,25 @@ func (s *postgresTestSuite) TestPg_DeleteToken() {
 	err = s.s.(pg).DeleteToken(s.ctx, "0e37df36-f698-11e6-8dd4-cb9ced3df976")
 	s.True(errors.Is(err, storage.ErrNotFound))
 }
+
+func (s *postgresTestSuite) TestPg_UpdateUserPermissions() {
+	_, err := s.db.Exec(`
+		INSERT INTO store_user (email, password_hash, is_admin) VALUES ('admin@test.com', '123', FALSE);
+	`)
+	s.Require().NoError(err)
+
+	u := model.User{ID: 1, IsAdmin: true}
+
+	err = s.s.(pg).UpdateUserPermissions(s.ctx, u)
+	s.Require().NoError(err)
+
+	res := model.User{}
+	s.Require().NoError(s.db.QueryRow(`
+		SELECT email, password_hash, is_admin FROM store_user WHERE id = $1
+	`, 1).Scan(&res.Email, &res.PasswordHash, &res.IsAdmin))
+
+	s.Equal(model.User{Email: "admin@test.com", PasswordHash: "123", IsAdmin: true}, res)
+
+	err = s.s.(pg).UpdateUserPermissions(s.ctx, model.User{ID: 1000})
+	s.True(errors.Is(err, storage.ErrNotFound))
+}

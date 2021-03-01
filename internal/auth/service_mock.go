@@ -107,3 +107,17 @@ func (mr *MockServiceMockRecorder) ValidateAccessToken(token interface{}) *gomoc
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateAccessToken", reflect.TypeOf((*MockService)(nil).ValidateAccessToken), token)
 }
+
+// UpdateUserPermissions mocks base method
+func (m *MockService) UpdateUserPermissions(ctx context.Context, user model.User) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateUserPermissions", ctx, user)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateUserPermissions indicates an expected call of UpdateUserPermissions
+func (mr *MockServiceMockRecorder) UpdateUserPermissions(ctx, user interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserPermissions", reflect.TypeOf((*MockService)(nil).UpdateUserPermissions), ctx, user)
+}

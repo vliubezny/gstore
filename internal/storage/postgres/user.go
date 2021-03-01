@@ -79,3 +79,19 @@ func (p pg) DeleteToken(ctx context.Context, tokenID string) error {
 
 	return nil
 }
+
+func (p pg) UpdateUserPermissions(ctx context.Context, user model.User) error {
+	res, err := p.db.ExecContext(ctx, `
+		UPDATE store_user SET is_admin = $2 WHERE id = $1
+	`, user.ID, user.IsAdmin)
+
+	if err != nil {
+		return fmt.Errorf("failed to update user permissions: %w", err)
+	}
+
+	if c, _ := res.RowsAffected(); c == 0 {
+		return storage.ErrNotFound
+	}
+
+	return nil
+}

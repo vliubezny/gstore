@@ -54,6 +54,8 @@ func SetupRouter(s service.Service, a auth.Service, r chi.Router, accessTokenVal
 			allowAdminMiddleware,
 		)
 
+		r.Put("/v1/users/{id}/permissions", srv.updateUserPermissionsHandler)
+
 		r.Post("/v1/categories", srv.createCategoryHandler)
 		r.Put("/v1/categories/{id}", srv.updateCategoryHandler)
 		r.Delete("/v1/categories/{id}", srv.deleteCategoryHandler)

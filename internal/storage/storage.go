@@ -103,4 +103,7 @@ type UserStorage interface {
 
 	// DeleteToken deletes token.
 	DeleteToken(ctx context.Context, tokenID string) error
+
+	// UpdateUserPermissions updates user permissions.
+	UpdateUserPermissions(ctx context.Context, user model.User) error
 }

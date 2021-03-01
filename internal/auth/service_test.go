@@ -420,3 +420,47 @@ func TestService_ValidateAccessToken(t *testing.T) {
 	assert.Equal(t, u.ID, claims.UserID)
 	assert.NotEmpty(t, claims.Id)
 }
+
+func TestService_UpdateUserPermissions(t *testing.T) {
+	testCases := []struct {
+		desc string
+		user model.User
+		rErr error
+		err  error
+	}{
+		{
+			desc: "success",
+			user: model.User{ID: 1, IsAdmin: true},
+			rErr: nil,
+			err:  nil,
+		},
+		{
+			desc: "ErrNotFound",
+			rErr: storage.ErrNotFound,
+			user: model.User{ID: 1, IsAdmin: true},
+			err:  ErrNotFound,
+		},
+		{
+			desc: "unexpected error",
+			rErr: assert.AnError,
+			user: model.User{ID: 1, IsAdmin: true},
+			err:  assert.AnError,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			st := storage.NewMockUserStorage(ctrl)
+
+			st.EXPECT().UpdateUserPermissions(ctx, tC.user).Return(tC.rErr)
+
+			s := New(st, signKey)
+
+			err := s.UpdateUserPermissions(ctx, tC.user)
+
+			assert.True(t, errors.Is(err, tC.err), fmt.Sprintf("wanted %s got %s", tC.err, err))
+		})
+	}
+}

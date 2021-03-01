@@ -407,3 +407,17 @@ func (mr *MockUserStorageMockRecorder) DeleteToken(ctx, tokenID interface{}) *go
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteToken", reflect.TypeOf((*MockUserStorage)(nil).DeleteToken), ctx, tokenID)
 }
+
+// UpdateUserPermissions mocks base method
+func (m *MockUserStorage) UpdateUserPermissions(ctx context.Context, user model.User) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateUserPermissions", ctx, user)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateUserPermissions indicates an expected call of UpdateUserPermissions
+func (mr *MockUserStorageMockRecorder) UpdateUserPermissions(ctx, user interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserPermissions", reflect.TypeOf((*MockUserStorage)(nil).UpdateUserPermissions), ctx, user)
+}

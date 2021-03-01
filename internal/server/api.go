@@ -127,3 +127,13 @@ func fromTokenPairModel(tp auth.TokenPair) tokenPair {
 		RefreshToken: tp.RefreshToken,
 	}
 }
+
+type userPermissions struct {
+	IsAdmin bool `json:"isAdmin" validate:"required"`
+}
+
+func (p userPermissions) toModel() model.User {
+	return model.User{
+		IsAdmin: p.IsAdmin,
+	}
+}
