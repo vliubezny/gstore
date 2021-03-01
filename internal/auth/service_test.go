@@ -168,7 +168,16 @@ func TestService_Login(t *testing.T) {
 	}
 }
 
-func mustSign(u model.User) string {
+func mustCreateAccessToken(u model.User) string {
+	c := newAccessClaims(u)
+	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, c).SignedString([]byte(signKey))
+	if err != nil {
+		panic(err)
+	}
+	return token
+}
+
+func mustCreateRefreshToken(u model.User) string {
 	c := newRefreshClaims(u)
 	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, c).SignedString([]byte(signKey))
 	if err != nil {
@@ -194,7 +203,7 @@ func TestService_Refresh(t *testing.T) {
 			rUserErr:        nil,
 			rDeleteTokenErr: nil,
 			rSaveTokenErr:   nil,
-			token:           mustSign(user),
+			token:           mustCreateRefreshToken(user),
 			err:             nil,
 		},
 		{
@@ -212,7 +221,7 @@ func TestService_Refresh(t *testing.T) {
 			rUserErr:        storage.ErrNotFound,
 			rDeleteTokenErr: errSkip,
 			rSaveTokenErr:   errSkip,
-			token:           mustSign(user),
+			token:           mustCreateRefreshToken(user),
 			err:             ErrInvalidToken,
 		},
 		{
@@ -221,7 +230,7 @@ func TestService_Refresh(t *testing.T) {
 			rUserErr:        assert.AnError,
 			rDeleteTokenErr: errSkip,
 			rSaveTokenErr:   errSkip,
-			token:           mustSign(user),
+			token:           mustCreateRefreshToken(user),
 			err:             assert.AnError,
 		},
 		{
@@ -230,7 +239,7 @@ func TestService_Refresh(t *testing.T) {
 			rUserErr:        nil,
 			rDeleteTokenErr: storage.ErrNotFound,
 			rSaveTokenErr:   errSkip,
-			token:           mustSign(user),
+			token:           mustCreateRefreshToken(user),
 			err:             ErrInvalidToken,
 		},
 		{
@@ -239,7 +248,7 @@ func TestService_Refresh(t *testing.T) {
 			rUserErr:        nil,
 			rDeleteTokenErr: assert.AnError,
 			rSaveTokenErr:   errSkip,
-			token:           mustSign(user),
+			token:           mustCreateRefreshToken(user),
 			err:             assert.AnError,
 		},
 		{
@@ -248,7 +257,7 @@ func TestService_Refresh(t *testing.T) {
 			rUserErr:        nil,
 			rDeleteTokenErr: nil,
 			rSaveTokenErr:   assert.AnError,
-			token:           mustSign(user),
+			token:           mustCreateRefreshToken(user),
 			err:             assert.AnError,
 		},
 	}
@@ -296,13 +305,13 @@ func TestService_Revoke(t *testing.T) {
 		{
 			desc:  "success",
 			rErr:  nil,
-			token: mustSign(user),
+			token: mustCreateRefreshToken(user),
 			err:   nil,
 		},
 		{
 			desc:  "token used - success",
 			rErr:  storage.ErrNotFound,
-			token: mustSign(user),
+			token: mustCreateRefreshToken(user),
 			err:   nil,
 		},
 		{
@@ -314,7 +323,7 @@ func TestService_Revoke(t *testing.T) {
 		{
 			desc:  "delete token - error",
 			rErr:  assert.AnError,
-			token: mustSign(user),
+			token: mustCreateRefreshToken(user),
 			err:   assert.AnError,
 		},
 	}
@@ -391,4 +400,23 @@ func TestService_validateRefreshToken(t *testing.T) {
 	assert.Equal(t, u.ID, ac.UserID)
 	assert.NotEmpty(t, ac.Id)
 	assert.InDelta(t, time.Now().Add(30*24*time.Hour).Unix(), ac.ExpiresAt, 1)
+}
+
+func TestService_ValidateAccessToken(t *testing.T) {
+	s := New(nil, signKey)
+
+	u := model.User{
+		ID:      1,
+		Email:   "admin@test.com",
+		IsAdmin: true,
+	}
+
+	token := mustCreateAccessToken(u)
+
+	claims, err := s.ValidateAccessToken(token)
+	require.NoError(t, err)
+
+	assert.Equal(t, typeAccess, claims.TokenType)
+	assert.Equal(t, u.ID, claims.UserID)
+	assert.NotEmpty(t, claims.Id)
 }

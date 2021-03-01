@@ -55,12 +55,16 @@ type TokenPair struct {
 	RefreshToken string
 }
 
+// AccessTokenValidator parses and validates access token.
+type AccessTokenValidator func(token string) (AccessTokenClaims, error)
+
 // Service provides methods for user authentication.
 type Service interface {
 	Register(ctx context.Context, user model.User, password string) (model.User, error)
 	Login(ctx context.Context, email, password string) (TokenPair, error)
 	Refresh(ctx context.Context, refreshToken string) (TokenPair, error)
 	Revoke(ctx context.Context, refreshToken string) error
+	ValidateAccessToken(token string) (AccessTokenClaims, error)
 }
 
 type authService struct {
@@ -199,12 +203,12 @@ func newAccessClaims(user model.User) AccessTokenClaims {
 	}
 }
 
-func validateAccessToken(token string, signKey []byte) (AccessTokenClaims, error) {
+func (s *authService) ValidateAccessToken(token string) (AccessTokenClaims, error) {
 	at, err := jwt.ParseWithClaims(token, &AccessTokenClaims{}, func(t *jwt.Token) (interface{}, error) {
 		if t.Method.Alg() != jwt.SigningMethodHS256.Alg() {
 			return nil, errors.New("token must be signed with HS256 alg")
 		}
-		return signKey, nil
+		return s.signKey, nil
 	})
 
 	if err != nil {

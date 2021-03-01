@@ -28,9 +28,6 @@ var opts = struct {
 
 	LogLevel string `long:"log.level" env:"LOG_LEVEL" default:"debug" description:"Log level" choice:"debug" choice:"info" choice:"warning" choice:"error"`
 
-	Username string `long:"auth.username" env:"AUTH_USERNAME" default:"admin" description:"username with full access"`
-	Password string `long:"auth.password" env:"AUTH_PASSWORD" default:"changeme" description:"user password"`
-
 	SignKey string `long:"auth.signkey" env:"AUTH_SIGN_KEY" default:"changeme" description:"sign key for JWT"`
 
 	PostgresDSN                string `long:"postgres" env:"POSTGRES_DSN" default:"host=localhost port=5432 user=postgres password=root dbname=postgres sslmode=disable" description:"postgres dsn"`
@@ -67,7 +64,7 @@ func main() {
 	authSvc := auth.New(strg.(storage.UserStorage), opts.SignKey)
 	r := chi.NewMux()
 
-	server.SetupRouter(service.New(strg), authSvc, r, opts.Username, opts.Password)
+	server.SetupRouter(service.New(strg), authSvc, r, authSvc.ValidateAccessToken)
 
 	srv := http.Server{
 		Addr:    fmt.Sprintf("%s:%d", opts.Host, opts.Port),

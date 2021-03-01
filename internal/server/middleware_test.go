@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -12,6 +13,7 @@ import (
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/vliubezny/gstore/internal/auth"
 )
 
 func Test_setContentTypeMiddleware(t *testing.T) {
@@ -76,41 +78,42 @@ func Test_recoveryMiddleware(t *testing.T) {
 	assert.Contains(t, log.Message, file, "Missing stacktrace")
 }
 
-func Test_basicAuthMiddleware(t *testing.T) {
+func Test_jwtAuthMiddleware(t *testing.T) {
+	testClaims := auth.AccessTokenClaims{UserID: 1}
 	testCases := []struct {
-		desc     string
-		username string
-		password string
-		rcode    int
-		rdata    string
+		desc  string
+		token string
+		err   error
+		rcode int
+		rdata string
 	}{
 		{
-			desc:     "allow valid credentials",
-			username: testUsername,
-			password: testPassword,
-			rcode:    http.StatusOK,
-			rdata:    `{"result":"OK"}`,
+			desc:  "allow valid token",
+			token: "testtoken",
+			err:   nil,
+			rcode: http.StatusOK,
+			rdata: `{"result":"OK"}`,
 		},
 		{
-			desc:     "block anonymous",
-			username: "",
-			password: "",
-			rcode:    http.StatusUnauthorized,
-			rdata:    `{"error":"Unauthorized"}`,
+			desc:  "missing token",
+			token: "",
+			err:   nil,
+			rcode: http.StatusUnauthorized,
+			rdata: `{"error":"missing token"}`,
 		},
 		{
-			desc:     "block invalid username",
-			username: "invalid",
-			password: testPassword,
-			rcode:    http.StatusUnauthorized,
-			rdata:    `{"error":"Unauthorized"}`,
+			desc:  "invalid token",
+			token: "testtoken",
+			err:   auth.ErrInvalidToken,
+			rcode: http.StatusUnauthorized,
+			rdata: `{"error":"invalid access token"}`,
 		},
 		{
-			desc:     "block invalid password",
-			username: testUsername,
-			password: "invalid",
-			rcode:    http.StatusUnauthorized,
-			rdata:    `{"error":"Unauthorized"}`,
+			desc:  "internal error",
+			token: "testtoken",
+			err:   assert.AnError,
+			rcode: http.StatusInternalServerError,
+			rdata: `{"error":"internal error"}`,
 		},
 	}
 	for _, tC := range testCases {
@@ -120,16 +123,73 @@ func Test_basicAuthMiddleware(t *testing.T) {
 			rec := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodPost, "/", nil).WithContext(ctx)
 
-			if tC.username != "" && tC.password != "" {
-				req.SetBasicAuth(tC.username, tC.password)
+			if tC.token != "" {
+				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tC.token))
 			}
+
+			h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				c := r.Context().Value(claimsKey{})
+				assert.Equal(t, testClaims, c)
+
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte(`{"result":"OK"}`))
+			})
+
+			jwtAuthMiddleware(func(token string) (auth.AccessTokenClaims, error) {
+				assert.Equal(t, tC.token, token)
+				return testClaims, tC.err
+			})(h).ServeHTTP(rec, req)
+
+			body, _ := ioutil.ReadAll(rec.Result().Body)
+
+			assert.Equal(t, tC.rcode, rec.Result().StatusCode)
+			assert.JSONEq(t, tC.rdata, string(body))
+		})
+	}
+}
+
+func Test_allowAdminMiddleware(t *testing.T) {
+	testCases := []struct {
+		desc   string
+		claims *auth.AccessTokenClaims
+		rcode  int
+		rdata  string
+	}{
+		{
+			desc:   "allow admin",
+			claims: &auth.AccessTokenClaims{UserID: 1, IsAdmin: true},
+			rcode:  http.StatusOK,
+			rdata:  `{"result":"OK"}`,
+		},
+		{
+			desc:   "block anonymous",
+			claims: nil,
+			rcode:  http.StatusUnauthorized,
+			rdata:  `{"error":"authentication required"}`,
+		},
+		{
+			desc:   "block non admin",
+			claims: &auth.AccessTokenClaims{UserID: 1, IsAdmin: false},
+			rcode:  http.StatusForbidden,
+			rdata:  `{"error":"access not allowed"}`,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			logger, _ := test.NewNullLogger()
+			ctx := context.WithValue(context.Background(), loggerKey{}, logger)
+			if tC.claims != nil {
+				ctx = context.WithValue(ctx, claimsKey{}, *tC.claims)
+			}
+			rec := httptest.NewRecorder()
+			req := httptest.NewRequest(http.MethodPost, "/", nil).WithContext(ctx)
 
 			h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
 				w.Write([]byte(`{"result":"OK"}`))
 			})
 
-			basicAuthMiddleware(testUsername, testPassword)(h).ServeHTTP(rec, req)
+			allowAdminMiddleware(h).ServeHTTP(rec, req)
 
 			body, _ := ioutil.ReadAll(rec.Result().Body)
 

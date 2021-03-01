@@ -92,3 +92,18 @@ func (mr *MockServiceMockRecorder) Revoke(ctx, refreshToken interface{}) *gomock
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Revoke", reflect.TypeOf((*MockService)(nil).Revoke), ctx, refreshToken)
 }
+
+// ValidateAccessToken mocks base method
+func (m *MockService) ValidateAccessToken(token string) (AccessTokenClaims, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ValidateAccessToken", token)
+	ret0, _ := ret[0].(AccessTokenClaims)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ValidateAccessToken indicates an expected call of ValidateAccessToken
+func (mr *MockServiceMockRecorder) ValidateAccessToken(token interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateAccessToken", reflect.TypeOf((*MockService)(nil).ValidateAccessToken), token)
+}

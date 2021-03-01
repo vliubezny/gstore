@@ -206,6 +206,8 @@ func Test_refreshHandler(t *testing.T) {
 
 			router := setupTestRouterWithAuth(nil, svc)
 			rec, r := newTestParameters(http.MethodPost, "/v1/refresh", "")
+			r.Header.Del("Authorization")
+
 			if tC.token != "" {
 				r.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tC.token))
 			}
@@ -269,6 +271,8 @@ func Test_revokeHandler(t *testing.T) {
 
 			router := setupTestRouterWithAuth(nil, svc)
 			rec, r := newTestParameters(http.MethodPost, "/v1/revoke", "")
+			r.Header.Del("Authorization")
+
 			if tC.token != "" {
 				r.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tC.token))
 			}

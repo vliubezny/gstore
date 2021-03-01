@@ -30,7 +30,9 @@ func setupTestRouter(s service.Service) http.Handler {
 
 func setupTestRouterWithAuth(s service.Service, a auth.Service) http.Handler {
 	r := chi.NewRouter()
-	SetupRouter(s, a, r, testUsername, testPassword)
+	SetupRouter(s, a, r, func(_ string) (auth.AccessTokenClaims, error) {
+		return auth.AccessTokenClaims{UserID: 1, IsAdmin: true}, nil
+	})
 	return r
 }
 
@@ -47,7 +49,7 @@ func newTestParameters(method, uri, body string) (*httptest.ResponseRecorder, *h
 		r.Header.Set(headerContentType, contentTypeJSON)
 	}
 
-	r.SetBasicAuth(testUsername, testPassword)
+	r.Header.Set("Authorization", "Bearer testtoken")
 
 	return rec, r
 }

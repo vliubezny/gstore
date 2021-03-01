@@ -20,7 +20,7 @@ type server struct {
 }
 
 // SetupRouter setups routes and handlers.
-func SetupRouter(s service.Service, a auth.Service, r chi.Router, username, password string) {
+func SetupRouter(s service.Service, a auth.Service, r chi.Router, accessTokenValidator auth.AccessTokenValidator) {
 	srv := &server{
 		s: s,
 		a: a,
@@ -49,7 +49,10 @@ func SetupRouter(s service.Service, a auth.Service, r chi.Router, username, pass
 	r.Get("/v1/products/{id}/offers", srv.getProductOffersHandler)
 
 	r.Group(func(r chi.Router) {
-		r.Use(basicAuthMiddleware(username, password))
+		r.Use(
+			jwtAuthMiddleware(accessTokenValidator),
+			allowAdminMiddleware,
+		)
 
 		r.Post("/v1/categories", srv.createCategoryHandler)
 		r.Put("/v1/categories/{id}", srv.updateCategoryHandler)
