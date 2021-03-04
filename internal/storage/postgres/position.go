@@ -17,7 +17,7 @@ const (
 func (p pg) GetStorePositions(ctx context.Context, storeID int64) ([]model.Position, error) {
 	var positions []position
 
-	if err := p.db.SelectContext(ctx, &positions, "SELECT * FROM position WHERE store_id=$1", storeID); err != nil {
+	if err := p.db.SelectContext(ctx, &positions, "SELECT product_id, store_id, price FROM position WHERE store_id=$1", storeID); err != nil {
 		return nil, fmt.Errorf("failed to get positions: %w", err)
 	}
 
@@ -32,7 +32,7 @@ func (p pg) GetStorePositions(ctx context.Context, storeID int64) ([]model.Posit
 func (p pg) GetProductPositions(ctx context.Context, productID int64) ([]model.Position, error) {
 	var positions []position
 
-	if err := p.db.SelectContext(ctx, &positions, "SELECT * FROM position WHERE product_id=$1", productID); err != nil {
+	if err := p.db.SelectContext(ctx, &positions, "SELECT product_id, store_id, price FROM position WHERE product_id=$1", productID); err != nil {
 		return nil, fmt.Errorf("failed to get positions: %w", err)
 	}
 

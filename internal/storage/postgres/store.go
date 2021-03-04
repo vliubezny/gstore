@@ -11,7 +11,7 @@ import (
 
 func (p pg) GetStores(ctx context.Context) ([]model.Store, error) {
 	var stores []store
-	if err := p.db.SelectContext(ctx, &stores, "SELECT * FROM store"); err != nil {
+	if err := p.db.SelectContext(ctx, &stores, "SELECT id, name FROM store"); err != nil {
 		return nil, err
 	}
 
@@ -25,7 +25,7 @@ func (p pg) GetStores(ctx context.Context) ([]model.Store, error) {
 
 func (p pg) GetStore(ctx context.Context, storeID int64) (model.Store, error) {
 	var s store
-	err := p.db.GetContext(ctx, &s, "SELECT * FROM store WHERE id = $1", storeID)
+	err := p.db.GetContext(ctx, &s, "SELECT id, name FROM store WHERE id = $1", storeID)
 
 	if err == sql.ErrNoRows {
 		return model.Store{}, storage.ErrNotFound

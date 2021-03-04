@@ -9,6 +9,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	model "github.com/vliubezny/gstore/internal/model"
 	reflect "reflect"
+	time "time"
 )
 
 // MockStorage is a mock of Storage interface
@@ -309,4 +310,114 @@ func (m *MockStorage) DeletePosition(ctx context.Context, productID, storeID int
 func (mr *MockStorageMockRecorder) DeletePosition(ctx, productID, storeID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePosition", reflect.TypeOf((*MockStorage)(nil).DeletePosition), ctx, productID, storeID)
+}
+
+// MockUserStorage is a mock of UserStorage interface
+type MockUserStorage struct {
+	ctrl     *gomock.Controller
+	recorder *MockUserStorageMockRecorder
+}
+
+// MockUserStorageMockRecorder is the mock recorder for MockUserStorage
+type MockUserStorageMockRecorder struct {
+	mock *MockUserStorage
+}
+
+// NewMockUserStorage creates a new mock instance
+func NewMockUserStorage(ctrl *gomock.Controller) *MockUserStorage {
+	mock := &MockUserStorage{ctrl: ctrl}
+	mock.recorder = &MockUserStorageMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockUserStorage) EXPECT() *MockUserStorageMockRecorder {
+	return m.recorder
+}
+
+// CreateUser mocks base method
+func (m *MockUserStorage) CreateUser(ctx context.Context, user model.User) (model.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateUser", ctx, user)
+	ret0, _ := ret[0].(model.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateUser indicates an expected call of CreateUser
+func (mr *MockUserStorageMockRecorder) CreateUser(ctx, user interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockUserStorage)(nil).CreateUser), ctx, user)
+}
+
+// GetUserByEmail mocks base method
+func (m *MockUserStorage) GetUserByEmail(ctx context.Context, email string) (model.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserByEmail", ctx, email)
+	ret0, _ := ret[0].(model.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserByEmail indicates an expected call of GetUserByEmail
+func (mr *MockUserStorageMockRecorder) GetUserByEmail(ctx, email interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByEmail", reflect.TypeOf((*MockUserStorage)(nil).GetUserByEmail), ctx, email)
+}
+
+// GetUserByID mocks base method
+func (m *MockUserStorage) GetUserByID(ctx context.Context, id int64) (model.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserByID", ctx, id)
+	ret0, _ := ret[0].(model.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserByID indicates an expected call of GetUserByID
+func (mr *MockUserStorageMockRecorder) GetUserByID(ctx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByID", reflect.TypeOf((*MockUserStorage)(nil).GetUserByID), ctx, id)
+}
+
+// SaveToken mocks base method
+func (m *MockUserStorage) SaveToken(ctx context.Context, tokenID string, userID int64, expiresAt time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveToken", ctx, tokenID, userID, expiresAt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveToken indicates an expected call of SaveToken
+func (mr *MockUserStorageMockRecorder) SaveToken(ctx, tokenID, userID, expiresAt interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveToken", reflect.TypeOf((*MockUserStorage)(nil).SaveToken), ctx, tokenID, userID, expiresAt)
+}
+
+// DeleteToken mocks base method
+func (m *MockUserStorage) DeleteToken(ctx context.Context, tokenID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteToken", ctx, tokenID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteToken indicates an expected call of DeleteToken
+func (mr *MockUserStorageMockRecorder) DeleteToken(ctx, tokenID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteToken", reflect.TypeOf((*MockUserStorage)(nil).DeleteToken), ctx, tokenID)
+}
+
+// UpdateUserPermissions mocks base method
+func (m *MockUserStorage) UpdateUserPermissions(ctx context.Context, user model.User) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateUserPermissions", ctx, user)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateUserPermissions indicates an expected call of UpdateUserPermissions
+func (mr *MockUserStorageMockRecorder) UpdateUserPermissions(ctx, user interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserPermissions", reflect.TypeOf((*MockUserStorage)(nil).UpdateUserPermissions), ctx, user)
 }

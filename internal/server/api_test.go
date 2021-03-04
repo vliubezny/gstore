@@ -187,3 +187,53 @@ func Test_validate_product(t *testing.T) {
 		})
 	}
 }
+
+func Test_validate_registrationForm(t *testing.T) {
+	testCases := []struct {
+		desc string
+		req  credentials
+		errs string
+	}{
+		{
+			desc: "valid",
+			req:  credentials{Email: "admin@test.com", Password: "testP@ss"},
+			errs: "",
+		},
+		{
+			desc: "missing email",
+			req:  credentials{Password: "testP@ss"},
+			errs: "email is a required field",
+		},
+		{
+			desc: "invalid email",
+			req:  credentials{Email: "admintest.com", Password: "testP@ss"},
+			errs: "email must be a valid email address",
+		},
+		{
+			desc: "missing password",
+			req:  credentials{Email: "admin@test.com"},
+			errs: "password is a required field",
+		},
+		{
+			desc: "invalid password 7",
+			req:  credentials{Email: "admin@test.com", Password: "testP@s"},
+			errs: "password must be at least 8 characters in length",
+		},
+		{
+			desc: "invalid password 161",
+			req:  credentials{Email: "admin@test.com", Password: strings.Repeat("x", 161)},
+			errs: "password must be at maximum 160 characters in length",
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			err := validate(&tC.req)
+
+			if tC.errs == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.EqualError(t, err, tC.errs)
+			}
+		})
+	}
+}

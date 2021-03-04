@@ -2,12 +2,14 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/sirupsen/logrus"
 	"github.com/tomasen/realip"
+	"github.com/vliubezny/gstore/internal/auth"
 )
 
 const (
@@ -16,6 +18,8 @@ const (
 )
 
 type loggerKey struct{}
+
+type claimsKey struct{}
 
 // setContentTypeMiddleware sets default content type.
 func setContentTypeMiddleware(contentType string) func(http.Handler) http.Handler {
@@ -54,24 +58,53 @@ func recoveryMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// basicAuthMiddleware handles basic authentication.
-func basicAuthMiddleware(username, password string) func(http.Handler) http.Handler {
+// jwtAuthMiddleware authenticates user with JWT.
+func jwtAuthMiddleware(accessTokenValidator auth.AccessTokenValidator) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			l := getLogger(r)
 
-			u, p, ok := r.BasicAuth()
-			if !ok {
-				writeError(l, w, http.StatusUnauthorized, "Unauthorized")
+			token := extractBearer(r)
+			if token == "" {
+				writeError(l, w, http.StatusUnauthorized, "missing token")
 				return
 			}
 
-			if u != username || p != password {
-				writeError(l.WithField("username", u), w, http.StatusUnauthorized, "Unauthorized")
+			claims, err := accessTokenValidator(token)
+			if err != nil {
+				if errors.Is(err, auth.ErrInvalidToken) {
+					writeError(l.WithError(err), w, http.StatusUnauthorized, "invalid access token")
+					return
+				}
+
+				writeInternalError(l.WithError(err), w, "failed to validate access token")
 				return
 			}
 
-			next.ServeHTTP(w, r)
+			ctx := context.WithValue(r.Context(), claimsKey{}, claims)
+			ctx = context.WithValue(ctx, loggerKey{}, l.WithField("userID", claims.UserID))
+
+			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+// allowAdminMiddleware authorizes admin to access resource.
+func allowAdminMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		l := getLogger(r)
+
+		claims, ok := r.Context().Value(claimsKey{}).(auth.AccessTokenClaims)
+		if !ok {
+			writeError(l, w, http.StatusUnauthorized, "authentication required")
+			return
+		}
+
+		if !claims.IsAdmin {
+			writeError(l, w, http.StatusForbidden, "access not allowed")
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }

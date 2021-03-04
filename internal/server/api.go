@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/shopspring/decimal"
+	"github.com/vliubezny/gstore/internal/auth"
 	"github.com/vliubezny/gstore/internal/model"
 )
 
@@ -93,5 +94,46 @@ func (p position) toModel() model.Position {
 		ProductID: p.ProductID,
 		StoreID:   p.StoreID,
 		Price:     p.Price,
+	}
+}
+
+type credentials struct {
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,gte=8,lte=160"`
+}
+
+type user struct {
+	ID      int64  `json:"id"`
+	Email   string `json:"email"`
+	IsAdmin bool   `json:"isAdmin"`
+}
+
+func fromUserModel(u model.User) user {
+	return user{
+		ID:      u.ID,
+		Email:   u.Email,
+		IsAdmin: u.IsAdmin,
+	}
+}
+
+type tokenPair struct {
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
+}
+
+func fromTokenPairModel(tp auth.TokenPair) tokenPair {
+	return tokenPair{
+		AccessToken:  tp.AccessToken,
+		RefreshToken: tp.RefreshToken,
+	}
+}
+
+type userPermissions struct {
+	IsAdmin bool `json:"isAdmin" validate:"required"`
+}
+
+func (p userPermissions) toModel() model.User {
+	return model.User{
+		IsAdmin: p.IsAdmin,
 	}
 }

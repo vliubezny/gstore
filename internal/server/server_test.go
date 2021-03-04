@@ -15,6 +15,7 @@ import (
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/vliubezny/gstore/internal/auth"
 	"github.com/vliubezny/gstore/internal/service"
 )
 
@@ -24,8 +25,14 @@ const (
 )
 
 func setupTestRouter(s service.Service) http.Handler {
+	return setupTestRouterWithAuth(s, nil)
+}
+
+func setupTestRouterWithAuth(s service.Service, a auth.Service) http.Handler {
 	r := chi.NewRouter()
-	SetupRouter(s, r, testUsername, testPassword)
+	SetupRouter(s, a, r, func(_ string) (auth.AccessTokenClaims, error) {
+		return auth.AccessTokenClaims{UserID: 1, IsAdmin: true}, nil
+	})
 	return r
 }
 
@@ -42,7 +49,7 @@ func newTestParameters(method, uri, body string) (*httptest.ResponseRecorder, *h
 		r.Header.Set(headerContentType, contentTypeJSON)
 	}
 
-	r.SetBasicAuth(testUsername, testPassword)
+	r.Header.Set("Authorization", "Bearer testtoken")
 
 	return rec, r
 }
@@ -109,4 +116,45 @@ func Test_writeOK(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, rec.Result().StatusCode)
 	assert.Equal(t, `{"Msg":"test"}`, string(body))
+}
+
+func Test_extractBearer(t *testing.T) {
+	testCases := []struct {
+		desc  string
+		auth  string
+		token string
+	}{
+		{
+			desc:  "success",
+			auth:  "Bearer testtoken",
+			token: "testtoken",
+		},
+		{
+			desc:  "missing header",
+			auth:  "",
+			token: "",
+		},
+		{
+			desc:  "incorrect header",
+			auth:  "Basic 1223232323",
+			token: "",
+		},
+		{
+			desc:  "empty bearer",
+			auth:  "Bearer ",
+			token: "",
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			r := httptest.NewRequest("", "/", nil)
+			if tC.auth != "" {
+				r.Header.Set("Authorization", tC.auth)
+			}
+
+			token := extractBearer(r)
+
+			assert.Equal(t, tC.token, token)
+		})
+	}
 }

@@ -5,21 +5,25 @@ import (
 	"net/http"
 	"runtime/debug"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
+	"github.com/vliubezny/gstore/internal/auth"
 	"github.com/vliubezny/gstore/internal/service"
 )
 
 type server struct {
 	s service.Service
+	a auth.Service
 }
 
 // SetupRouter setups routes and handlers.
-func SetupRouter(s service.Service, r chi.Router, username, password string) {
+func SetupRouter(s service.Service, a auth.Service, r chi.Router, accessTokenValidator auth.AccessTokenValidator) {
 	srv := &server{
 		s: s,
+		a: a,
 	}
 
 	r.Use(
@@ -27,6 +31,11 @@ func SetupRouter(s service.Service, r chi.Router, username, password string) {
 		setContentTypeMiddleware(contentTypeJSON),
 		recoveryMiddleware,
 	)
+
+	r.Post("/v1/register", srv.registerHandler)
+	r.Post("/v1/login", srv.loginHandler)
+	r.Post("/v1/refresh", srv.refreshHandler)
+	r.Post("/v1/revoke", srv.revokeHandler)
 
 	r.Get("/v1/categories", srv.getCategoriesHandler)
 	r.Get("/v1/categories/{id}", srv.getCategoryHandler)
@@ -40,7 +49,12 @@ func SetupRouter(s service.Service, r chi.Router, username, password string) {
 	r.Get("/v1/products/{id}/offers", srv.getProductOffersHandler)
 
 	r.Group(func(r chi.Router) {
-		r.Use(basicAuthMiddleware(username, password))
+		r.Use(
+			jwtAuthMiddleware(accessTokenValidator),
+			allowAdminMiddleware,
+		)
+
+		r.Put("/v1/users/{id}/permissions", srv.updateUserPermissionsHandler)
 
 		r.Post("/v1/categories", srv.createCategoryHandler)
 		r.Put("/v1/categories/{id}", srv.updateCategoryHandler)
@@ -63,6 +77,14 @@ func SetupRouter(s service.Service, r chi.Router, username, password string) {
 
 func getLogger(r *http.Request) logrus.FieldLogger {
 	return r.Context().Value(loggerKey{}).(logrus.FieldLogger)
+}
+
+func extractBearer(r *http.Request) string {
+	auth := r.Header.Get("Authorization")
+	if len(auth) > 7 && strings.ToUpper(auth[0:7]) == "BEARER " {
+		return auth[7:]
+	}
+	return ""
 }
 
 func getIDFromURL(r *http.Request, key string) (int64, error) {

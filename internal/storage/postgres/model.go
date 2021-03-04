@@ -58,3 +58,19 @@ func (p position) toModel() model.Position {
 		Price:     p.Price,
 	}
 }
+
+type user struct {
+	ID           int64  `db:"id"`
+	Email        string `db:"email"`
+	PasswordHash string `db:"password_hash"`
+	IsAdmin      bool   `db:"is_admin"`
+}
+
+func (u user) toModel() model.User {
+	return model.User{
+		ID:           u.ID,
+		Email:        u.Email,
+		PasswordHash: u.PasswordHash,
+		IsAdmin:      u.IsAdmin,
+	}
+}
