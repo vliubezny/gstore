@@ -95,3 +95,27 @@ func (p pg) UpdateUserPermissions(ctx context.Context, user model.User) error {
 
 	return nil
 }
+
+func (p pg) InTx(ctx context.Context, action func(s storage.UserStorage) error) error {
+	tx, err := p.dbx.BeginTxx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead})
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+
+	err = action(pg{dbx: p.dbx, db: tx})
+
+	if err != nil {
+		rbErr := tx.Rollback()
+		if rbErr != nil {
+			return fmt.Errorf("failed to rollback transaction: %v root: %w", rbErr, err)
+		}
+
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
+}
