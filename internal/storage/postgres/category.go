@@ -11,7 +11,7 @@ import (
 
 func (p pg) GetCategories(ctx context.Context) ([]model.Category, error) {
 	var categories []category
-	if err := p.db.SelectContext(ctx, &categories, "SELECT id, name FROM category"); err != nil {
+	if err := p.ext.SelectContext(ctx, &categories, "SELECT id, name FROM category"); err != nil {
 		return nil, err
 	}
 
@@ -25,7 +25,7 @@ func (p pg) GetCategories(ctx context.Context) ([]model.Category, error) {
 
 func (p pg) GetCategory(ctx context.Context, categoryID int64) (model.Category, error) {
 	var c category
-	err := p.db.GetContext(ctx, &c, "SELECT id, name FROM category WHERE id = $1", categoryID)
+	err := p.ext.GetContext(ctx, &c, "SELECT id, name FROM category WHERE id = $1", categoryID)
 
 	if err == sql.ErrNoRows {
 		return model.Category{}, storage.ErrNotFound
@@ -39,14 +39,14 @@ func (p pg) GetCategory(ctx context.Context, categoryID int64) (model.Category, 
 }
 
 func (p pg) CreateCategory(ctx context.Context, category model.Category) (model.Category, error) {
-	if err := p.db.GetContext(ctx, &category.ID, "INSERT INTO category (name) VALUES ($1) RETURNING id", category.Name); err != nil {
+	if err := p.ext.GetContext(ctx, &category.ID, "INSERT INTO category (name) VALUES ($1) RETURNING id", category.Name); err != nil {
 		return model.Category{}, fmt.Errorf("failed to create category: %w", err)
 	}
 	return category, nil
 }
 
 func (p pg) UpdateCategory(ctx context.Context, category model.Category) error {
-	res, err := p.db.ExecContext(ctx, "UPDATE category SET name = $1 WHERE id = $2", category.Name, category.ID)
+	res, err := p.ext.ExecContext(ctx, "UPDATE category SET name = $1 WHERE id = $2", category.Name, category.ID)
 
 	if err != nil {
 		return fmt.Errorf("failed to update category: %w", err)
@@ -60,7 +60,7 @@ func (p pg) UpdateCategory(ctx context.Context, category model.Category) error {
 }
 
 func (p pg) DeleteCategory(ctx context.Context, categoryID int64) error {
-	res, err := p.db.ExecContext(ctx, "DELETE FROM category WHERE id = $1", categoryID)
+	res, err := p.ext.ExecContext(ctx, "DELETE FROM category WHERE id = $1", categoryID)
 
 	if err != nil {
 		return fmt.Errorf("failed to delete category: %w", err)

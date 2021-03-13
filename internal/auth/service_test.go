@@ -267,17 +267,22 @@ func TestService_Refresh(t *testing.T) {
 			defer ctrl.Finish()
 
 			st := storage.NewMockUserStorage(ctrl)
+			tx := storage.NewMockUserStorage(ctrl)
 
 			if tC.rUserErr != errSkip {
 				st.EXPECT().GetUserByID(ctx, tC.rUser.ID).Return(tC.rUser, tC.rUserErr)
 			}
 
 			if tC.rDeleteTokenErr != errSkip {
-				st.EXPECT().DeleteToken(ctx, gomock.AssignableToTypeOf("")).Return(tC.rDeleteTokenErr)
+				st.EXPECT().InTx(ctx, gomock.Any()).DoAndReturn(
+					func(_ context.Context, action func(s storage.UserStorage) error) error {
+						return action(tx)
+					})
+				tx.EXPECT().DeleteToken(ctx, gomock.Any()).Return(tC.rDeleteTokenErr)
 			}
 
 			if tC.rSaveTokenErr != errSkip {
-				st.EXPECT().SaveToken(ctx, gomock.AssignableToTypeOf(""), tC.rUser.ID, gomock.AssignableToTypeOf(time.Time{})).
+				tx.EXPECT().SaveToken(ctx, gomock.Any(), tC.rUser.ID, gomock.AssignableToTypeOf(time.Time{})).
 					Return(tC.rSaveTokenErr)
 			}
 

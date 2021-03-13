@@ -4,9 +4,11 @@ package postgres
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/vliubezny/gstore/internal/model"
 	"github.com/vliubezny/gstore/internal/storage"
 )
@@ -115,4 +117,38 @@ func (s *postgresTestSuite) TestPg_UpdateUserPermissions() {
 
 	err = s.s.(pg).UpdateUserPermissions(s.ctx, model.User{ID: 1000})
 	s.True(errors.Is(err, storage.ErrNotFound))
+}
+
+func (s *postgresTestSuite) TestPg_InTx() {
+	userCount := func() int {
+		var c int
+		s.Require().NoError(s.db.QueryRow(`SELECT count(*) FROM store_user`).Scan(&c))
+		return c
+	}
+
+	baseline := userCount()
+
+	err := s.s.(pg).InTx(s.ctx, func(us storage.UserStorage) error {
+		_, err := us.CreateUser(s.ctx, model.User{Email: "user1@test.com", PasswordHash: "123"})
+		s.Require().NoError(err)
+
+		s.Equal(baseline, userCount(), "read uncommitted")
+
+		return nil
+	})
+
+	s.Require().NoError(err)
+	s.Equal(baseline+1, userCount(), "missing commit")
+
+	baseline = userCount()
+
+	err = s.s.(pg).InTx(s.ctx, func(us storage.UserStorage) error {
+		_, err := us.CreateUser(s.ctx, model.User{Email: "user2@test.com", PasswordHash: "123"})
+		s.Require().NoError(err)
+
+		return assert.AnError
+	})
+
+	s.True(errors.Is(err, assert.AnError), fmt.Sprintf("wanted %s got %s", assert.AnError, err))
+	s.Equal(baseline, userCount(), "missing rollback")
 }

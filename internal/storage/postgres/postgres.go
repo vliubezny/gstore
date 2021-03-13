@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 	"database/sql"
 
 	"github.com/jmoiron/sqlx"
@@ -8,13 +9,22 @@ import (
 	"github.com/vliubezny/gstore/internal/storage"
 )
 
+type extContext interface {
+	sqlx.ExtContext
+	SelectContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
+	GetContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
+}
+
 type pg struct {
-	db *sqlx.DB
+	dbx *sqlx.DB
+	ext extContext
 }
 
 // New creates postgres storage.
 func New(db *sql.DB) storage.Storage {
+	dbx := sqlx.NewDb(db, "postgres")
 	return pg{
-		db: sqlx.NewDb(db, "postgres"),
+		dbx: dbx,
+		ext: dbx,
 	}
 }

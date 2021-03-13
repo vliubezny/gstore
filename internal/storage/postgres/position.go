@@ -17,7 +17,7 @@ const (
 func (p pg) GetStorePositions(ctx context.Context, storeID int64) ([]model.Position, error) {
 	var positions []position
 
-	if err := p.db.SelectContext(ctx, &positions, "SELECT product_id, store_id, price FROM position WHERE store_id=$1", storeID); err != nil {
+	if err := p.ext.SelectContext(ctx, &positions, "SELECT product_id, store_id, price FROM position WHERE store_id=$1", storeID); err != nil {
 		return nil, fmt.Errorf("failed to get positions: %w", err)
 	}
 
@@ -32,7 +32,7 @@ func (p pg) GetStorePositions(ctx context.Context, storeID int64) ([]model.Posit
 func (p pg) GetProductPositions(ctx context.Context, productID int64) ([]model.Position, error) {
 	var positions []position
 
-	if err := p.db.SelectContext(ctx, &positions, "SELECT product_id, store_id, price FROM position WHERE product_id=$1", productID); err != nil {
+	if err := p.ext.SelectContext(ctx, &positions, "SELECT product_id, store_id, price FROM position WHERE product_id=$1", productID); err != nil {
 		return nil, fmt.Errorf("failed to get positions: %w", err)
 	}
 
@@ -45,7 +45,7 @@ func (p pg) GetProductPositions(ctx context.Context, productID int64) ([]model.P
 }
 
 func (p pg) UpsertPosition(ctx context.Context, position model.Position) error {
-	if _, err := p.db.ExecContext(ctx, `
+	if _, err := p.ext.ExecContext(ctx, `
 		INSERT INTO position (product_id, store_id, price) VALUES($1, $2, $3)
 			ON CONFLICT(product_id, store_id) DO UPDATE SET price = EXCLUDED.price;
 	`, position.ProductID, position.StoreID, position.Price); err != nil {
@@ -65,7 +65,7 @@ func (p pg) UpsertPosition(ctx context.Context, position model.Position) error {
 }
 
 func (p pg) DeletePosition(ctx context.Context, productID, storeID int64) error {
-	res, err := p.db.ExecContext(ctx, `
+	res, err := p.ext.ExecContext(ctx, `
 		DELETE FROM position WHERE product_id = $1 AND store_id = $2
 	`, productID, storeID)
 

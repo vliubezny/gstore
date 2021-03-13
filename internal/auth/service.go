@@ -150,27 +150,32 @@ func (s *authService) Refresh(ctx context.Context, refreshToken string) (TokenPa
 		return TokenPair{}, fmt.Errorf("failed to get user: %w", err)
 	}
 
-	if err = s.s.DeleteToken(ctx, claims.Id); err != nil {
-		if errors.Is(err, storage.ErrNotFound) { // reject refresh request if token was not found
-			return TokenPair{}, fmt.Errorf("%w: token has been used", ErrInvalidToken)
-		}
-		return TokenPair{}, fmt.Errorf("failed to delete token: %w", err)
-	}
-
 	at, err := s.signToken(newAccessClaims(u))
 	if err != nil {
 		return TokenPair{}, fmt.Errorf("failed to sign access token: %w", err)
 	}
 
 	rc := newRefreshClaims(u)
-
-	if err = s.s.SaveToken(ctx, rc.Id, u.ID, time.Unix(rc.ExpiresAt, 0)); err != nil {
-		return TokenPair{}, fmt.Errorf("failed to save refresh token: %w", err)
-	}
-
 	rt, err := s.signToken(rc)
 	if err != nil {
 		return TokenPair{}, fmt.Errorf("failed to sign refresh token: %w", err)
+	}
+
+	if err = s.s.InTx(ctx, func(us storage.UserStorage) error {
+		if err = us.DeleteToken(ctx, claims.Id); err != nil {
+			if errors.Is(err, storage.ErrNotFound) { // reject refresh request if token was not found
+				return fmt.Errorf("%w: token has been used", ErrInvalidToken)
+			}
+			return fmt.Errorf("failed to delete token: %w", err)
+		}
+
+		if err = us.SaveToken(ctx, rc.Id, u.ID, time.Unix(rc.ExpiresAt, 0)); err != nil {
+			return fmt.Errorf("failed to save refresh token: %w", err)
+		}
+
+		return nil
+	}); err != nil {
+		return TokenPair{}, err
 	}
 
 	return TokenPair{AccessToken: at, RefreshToken: rt}, nil

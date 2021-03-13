@@ -11,7 +11,7 @@ import (
 
 func (p pg) GetStores(ctx context.Context) ([]model.Store, error) {
 	var stores []store
-	if err := p.db.SelectContext(ctx, &stores, "SELECT id, name FROM store"); err != nil {
+	if err := p.ext.SelectContext(ctx, &stores, "SELECT id, name FROM store"); err != nil {
 		return nil, err
 	}
 
@@ -25,7 +25,7 @@ func (p pg) GetStores(ctx context.Context) ([]model.Store, error) {
 
 func (p pg) GetStore(ctx context.Context, storeID int64) (model.Store, error) {
 	var s store
-	err := p.db.GetContext(ctx, &s, "SELECT id, name FROM store WHERE id = $1", storeID)
+	err := p.ext.GetContext(ctx, &s, "SELECT id, name FROM store WHERE id = $1", storeID)
 
 	if err == sql.ErrNoRows {
 		return model.Store{}, storage.ErrNotFound
@@ -39,14 +39,14 @@ func (p pg) GetStore(ctx context.Context, storeID int64) (model.Store, error) {
 }
 
 func (p pg) CreateStore(ctx context.Context, store model.Store) (model.Store, error) {
-	if err := p.db.GetContext(ctx, &store.ID, "INSERT INTO store (name) VALUES ($1) RETURNING id", store.Name); err != nil {
+	if err := p.ext.GetContext(ctx, &store.ID, "INSERT INTO store (name) VALUES ($1) RETURNING id", store.Name); err != nil {
 		return model.Store{}, fmt.Errorf("failed to create store: %w", err)
 	}
 	return store, nil
 }
 
 func (p pg) UpdateStore(ctx context.Context, store model.Store) error {
-	res, err := p.db.ExecContext(ctx, "UPDATE store SET name = $1 WHERE id = $2", store.Name, store.ID)
+	res, err := p.ext.ExecContext(ctx, "UPDATE store SET name = $1 WHERE id = $2", store.Name, store.ID)
 
 	if err != nil {
 		return fmt.Errorf("failed to update store: %w", err)
@@ -60,7 +60,7 @@ func (p pg) UpdateStore(ctx context.Context, store model.Store) error {
 }
 
 func (p pg) DeleteStore(ctx context.Context, storeID int64) error {
-	res, err := p.db.ExecContext(ctx, "DELETE FROM store WHERE id = $1", storeID)
+	res, err := p.ext.ExecContext(ctx, "DELETE FROM store WHERE id = $1", storeID)
 
 	if err != nil {
 		return fmt.Errorf("failed to delete store: %w", err)

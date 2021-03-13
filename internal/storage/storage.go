@@ -89,6 +89,9 @@ type Storage interface {
 
 // UserStorage provides methods to interact with user storage.
 type UserStorage interface {
+	// InTx executes action in transaction.
+	InTx(ctx context.Context, action func(s UserStorage) error) error
+
 	// CreateUser creates new user.
 	CreateUser(ctx context.Context, user model.User) (model.User, error)
 

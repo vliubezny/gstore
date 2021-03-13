@@ -335,6 +335,20 @@ func (m *MockUserStorage) EXPECT() *MockUserStorageMockRecorder {
 	return m.recorder
 }
 
+// InTx mocks base method
+func (m *MockUserStorage) InTx(ctx context.Context, action func(UserStorage) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InTx", ctx, action)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InTx indicates an expected call of InTx
+func (mr *MockUserStorageMockRecorder) InTx(ctx, action interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InTx", reflect.TypeOf((*MockUserStorage)(nil).InTx), ctx, action)
+}
+
 // CreateUser mocks base method
 func (m *MockUserStorage) CreateUser(ctx context.Context, user model.User) (model.User, error) {
 	m.ctrl.T.Helper()
