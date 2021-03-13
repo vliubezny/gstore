@@ -17,7 +17,7 @@ type extContext interface {
 
 type pg struct {
 	dbx *sqlx.DB
-	db  extContext
+	ext extContext
 }
 
 // New creates postgres storage.
@@ -25,6 +25,6 @@ func New(db *sql.DB) storage.Storage {
 	dbx := sqlx.NewDb(db, "postgres")
 	return pg{
 		dbx: dbx,
-		db:  dbx,
+		ext: dbx,
 	}
 }

@@ -278,11 +278,11 @@ func TestService_Refresh(t *testing.T) {
 					func(_ context.Context, action func(s storage.UserStorage) error) error {
 						return action(tx)
 					})
-				tx.EXPECT().DeleteToken(ctx, gomock.AssignableToTypeOf("")).Return(tC.rDeleteTokenErr)
+				tx.EXPECT().DeleteToken(ctx, gomock.Any()).Return(tC.rDeleteTokenErr)
 			}
 
 			if tC.rSaveTokenErr != errSkip {
-				tx.EXPECT().SaveToken(ctx, gomock.AssignableToTypeOf(""), tC.rUser.ID, gomock.AssignableToTypeOf(time.Time{})).
+				tx.EXPECT().SaveToken(ctx, gomock.Any(), tC.rUser.ID, gomock.AssignableToTypeOf(time.Time{})).
 					Return(tC.rSaveTokenErr)
 			}
 

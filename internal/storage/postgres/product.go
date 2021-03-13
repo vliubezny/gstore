@@ -15,7 +15,7 @@ const categoryIDFKConstraint = "product_category_id_fkey"
 func (p pg) GetProducts(ctx context.Context, categoryID int64) ([]model.Product, error) {
 	var products []product
 
-	if err := p.db.SelectContext(ctx, &products, "SELECT id, category_id, name, description FROM product WHERE category_id=$1", categoryID); err != nil {
+	if err := p.ext.SelectContext(ctx, &products, "SELECT id, category_id, name, description FROM product WHERE category_id=$1", categoryID); err != nil {
 		return nil, fmt.Errorf("failed to get products: %w", err)
 	}
 
@@ -29,7 +29,7 @@ func (p pg) GetProducts(ctx context.Context, categoryID int64) ([]model.Product,
 
 func (p pg) GetProduct(ctx context.Context, productID int64) (model.Product, error) {
 	var prod product
-	err := p.db.GetContext(ctx, &prod, "SELECT id, category_id, name, description FROM product WHERE id = $1", productID)
+	err := p.ext.GetContext(ctx, &prod, "SELECT id, category_id, name, description FROM product WHERE id = $1", productID)
 
 	if err == sql.ErrNoRows {
 		return model.Product{}, storage.ErrNotFound
@@ -43,7 +43,7 @@ func (p pg) GetProduct(ctx context.Context, productID int64) (model.Product, err
 }
 
 func (p pg) CreateProduct(ctx context.Context, product model.Product) (model.Product, error) {
-	if err := p.db.GetContext(ctx, &product.ID, `
+	if err := p.ext.GetContext(ctx, &product.ID, `
 			INSERT INTO product (category_id, name, description) VALUES ($1, $2, $3) RETURNING id
 		`, product.CategoryID, product.Name, product.Description); err != nil {
 
@@ -56,7 +56,7 @@ func (p pg) CreateProduct(ctx context.Context, product model.Product) (model.Pro
 }
 
 func (p pg) UpdateProduct(ctx context.Context, product model.Product) error {
-	res, err := p.db.ExecContext(ctx, `
+	res, err := p.ext.ExecContext(ctx, `
 		UPDATE product SET
 		category_id =$2,
 		name = $3,
@@ -79,7 +79,7 @@ func (p pg) UpdateProduct(ctx context.Context, product model.Product) error {
 }
 
 func (p pg) DeleteProduct(ctx context.Context, productID int64) error {
-	res, err := p.db.ExecContext(ctx, "DELETE FROM product WHERE id = $1", productID)
+	res, err := p.ext.ExecContext(ctx, "DELETE FROM product WHERE id = $1", productID)
 
 	if err != nil {
 		return fmt.Errorf("failed to delete product: %w", err)

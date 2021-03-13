@@ -161,7 +161,7 @@ func (s *authService) Refresh(ctx context.Context, refreshToken string) (TokenPa
 		return TokenPair{}, fmt.Errorf("failed to sign refresh token: %w", err)
 	}
 
-	err = s.s.InTx(ctx, func(us storage.UserStorage) error {
+	if err = s.s.InTx(ctx, func(us storage.UserStorage) error {
 		if err = us.DeleteToken(ctx, claims.Id); err != nil {
 			if errors.Is(err, storage.ErrNotFound) { // reject refresh request if token was not found
 				return fmt.Errorf("%w: token has been used", ErrInvalidToken)
@@ -174,9 +174,7 @@ func (s *authService) Refresh(ctx context.Context, refreshToken string) (TokenPa
 		}
 
 		return nil
-	})
-
-	if err != nil {
+	}); err != nil {
 		return TokenPair{}, err
 	}
 
